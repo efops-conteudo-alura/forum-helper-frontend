@@ -7,6 +7,16 @@ import axios from 'axios';
 export const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || 'https://forum-helper-zmqxu.ondigitalocean.app/api';
 
+const api = axios.create({ baseURL: API_BASE_URL });
+api.interceptors.request.use((config) => {
+  if (!config.headers) config.headers = {};
+  const apiKey = localStorage.getItem('googleApiKey');
+  if (apiKey) {
+    config.headers['X-Api-Key'] = apiKey;
+  }
+  return config;
+});
+
 export const LATAM_USER_MAPPING = {
     'victos-costa': 'victor-costa',
     'nathqueiroz': 'nathalia-queiroz',
@@ -24,7 +34,7 @@ export async function fetchTopics(region = 'BR') {
     try {
         const endpoint = region === 'LATAM' ? '/topics/latam' : '/topics';
 
-        const response = await axios.get(`${API_BASE_URL}${endpoint}`);
+        const response = await api.get(endpoint);
         return response.data;
     } catch (error) {
         console.error('Erro no fetchTopics:', error);
@@ -39,7 +49,7 @@ export async function fetchLatamStats(username) {
             return { postsToday: 0, postsMonth: 0, platform: 'LATAM' };
         }
         console.log(`[API] Traduzido: ${username} -> LATAM: ${latamUsername}`);
-        const response = await axios.get(`${API_BASE_URL}/latam-user-stats?username=${latamUsername}`);
+        const response = await api.get(`/latam-user-stats?username=${latamUsername}`);
         return response.data;
     } catch (error) {
         console.error('Erro no fetchLatamStats:', error);
@@ -52,7 +62,7 @@ export async function claimTopic(topicLink, username, avatarUrl = null) {
         // Mesmo padrão do /rescue-claim: front manda o avatar pronto (que ele
         // já tem cacheado no localStorage). Backend valida e usa, evitando
         // scrappear na hora — claim fica instantâneo.
-        const response = await axios.post(`${API_BASE_URL}/claim`, {
+        const response = await api.post('/claim', {
             topicLink,
             username,
             avatar: avatarUrl,
@@ -66,7 +76,7 @@ export async function claimTopic(topicLink, username, avatarUrl = null) {
 
 export async function unclaimTopic(topicLink, username) {
     try {
-        const response = await axios.post(`${API_BASE_URL}/unclaim`, {
+        const response = await api.post('/unclaim', {
             topicLink,
             username
         });
@@ -79,7 +89,7 @@ export async function unclaimTopic(topicLink, username) {
 
 export async function fetchUserStats(username) {
     try {
-        const response = await axios.get(`${API_BASE_URL}/user-stats?username=${username}`);
+        const response = await api.get(`/user-stats?username=${username}`);
         return response.data;
     } catch (error) {
         console.error('Erro no fetchUserStats:', error);
@@ -90,7 +100,7 @@ export async function fetchUserStats(username) {
 export async function fetchTeamStats(usersArray) {
     try {
         const usersParam = usersArray.join(',');
-        const response = await axios.get(`${API_BASE_URL}/team-stats?users=${usersParam}`);
+        const response = await api.get(`/team-stats?users=${usersParam}`);
         return response.data;
     } catch (error) {
         console.error('Erro no fetchTeamStats:', error);
@@ -104,8 +114,8 @@ export async function fetchDashboardStats(startDate, endDate, users) {
         const encodedUsers = encodeURIComponent(usersParam);
         const encodedStart = encodeURIComponent(startDate);
         const encodedEnd = encodeURIComponent(endDate);
-        const response = await axios.get(
-            `${API_BASE_URL}/dashboard-stats?users=${encodedUsers}&startDate=${encodedStart}&endDate=${encodedEnd}`
+        const response = await api.get(
+            `/dashboard-stats?users=${encodedUsers}&startDate=${encodedStart}&endDate=${encodedEnd}`
         );
         return response.data;
     } catch (error) {
@@ -149,7 +159,7 @@ export async function fetchAvatarFromBackend(username) {
     }
 
     try {
-        const response = await axios.get(`${API_BASE_URL}/user-avatar?username=${normalizedUsername}`);
+        const response = await api.get(`/user-avatar?username=${normalizedUsername}`);
         const data = response.data;
 
         // FALHA explícita do backend (success: false) → negative cache.
@@ -201,7 +211,7 @@ export async function fetchAvatarFromBackend(username) {
 // Busca dados de tópicos por membro do BI (o backend decide o ID conforme a região)
 export async function fetchMemberTopicsByRegion(region = 'BR') {
     try {
-        const response = await axios.get(`${API_BASE_URL}/bi-topics?region=${region}`);
+        const response = await api.get(`/bi-topics?region=${region}`);
         return response.data || [];
     } catch (error) {
         console.error(`Erro ao buscar tópicos por membro (${region}):`, error);
@@ -234,7 +244,7 @@ export async function fetchUserAnnualData(username) {
 
 export async function fetchRescueQueue() {
     try {
-        const response = await axios.get(`${API_BASE_URL}/rescue-queue`);
+        const response = await api.get('/rescue-queue');
         return response.data;
     } catch (error) {
         console.error('Erro no fetchRescueQueue:', error);
@@ -243,7 +253,7 @@ export async function fetchRescueQueue() {
 }
 
 export async function claimRescueTopic(topicId, username, avatarUrl) {
-    const response = await axios.post(`${API_BASE_URL}/rescue-claim`, {
+    const response = await api.post('/rescue-claim', {
         topic_id: topicId,
         username: username,
         avatar: avatarUrl
@@ -252,7 +262,7 @@ export async function claimRescueTopic(topicId, username, avatarUrl) {
 }
 
 export async function unclaimRescueTopic(topicId) {
-    const response = await axios.post(`${API_BASE_URL}/rescue-unclaim`, {
+    const response = await api.post('/rescue-unclaim', {
         topic_id: topicId
     });
     return response.data;
@@ -265,7 +275,7 @@ export async function unclaimRescueTopic(topicId) {
   retorna ele.
 */
 export async function resolveRescueTopic(topicId, username) {
-    const response = await axios.post(`${API_BASE_URL}/rescue-resolve`, {
+    const response = await api.post('/rescue-resolve', {
         topic_id: topicId,
         username,
     });
@@ -307,8 +317,7 @@ export async function fetchAtividades({ dataInicio, dataFim, peso } = {}) {
         if (dataFim)    params.set('dataFim', dataFim);
         if (peso)       params.set('peso', String(peso));
         const qs = params.toString();
-        const url = `${API_BASE_URL}/atividades${qs ? `?${qs}` : ''}`;
-        const response = await axios.get(url);
+        const response = await api.get(`/atividades${qs ? `?${qs}` : ''}`);
         return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
         console.error('Erro no fetchAtividades:', error);
@@ -317,17 +326,17 @@ export async function fetchAtividades({ dataInicio, dataFim, peso } = {}) {
 }
 
 export async function createAtividade(payload) {
-    const response = await axios.post(`${API_BASE_URL}/atividades`, payload);
+    const response = await api.post('/atividades', payload);
     return response.data;
 }
 
 export async function updateAtividade(id, payload) {
-    const response = await axios.put(`${API_BASE_URL}/atividades/${id}`, payload);
+    const response = await api.put(`/atividades/${id}`, payload);
     return response.data;
 }
 
 export async function deleteAtividade(id) {
-    const response = await axios.delete(`${API_BASE_URL}/atividades/${id}`);
+    const response = await api.delete(`/atividades/${id}`);
     return response.data;
 }
 

@@ -277,7 +277,7 @@ const SettingsModal = ({ settings, theme, onChange, onThemeChange, onClose }) =>
           <div className="settings-tab" role="tabpanel">
             <IntegrationCard
               icon="fa-wand-magic-sparkles"
-              name="Google Gemini"
+              name="Chave de API"
               status={geminiStatus}
               statusLabel={geminiStatusLabel}
             >
@@ -285,19 +285,12 @@ const SettingsModal = ({ settings, theme, onChange, onThemeChange, onClose }) =>
                 <input
                   id="apiKeyInput"
                   type="password"
-                  placeholder="Cole sua chave aqui (AIzaSy...)"
+                  placeholder="Cole sua chave aqui (cbi_... ou AI key)"
                   value={local.apiKey}
                   onChange={(e) => handleChange('apiKey', e.target.value)}
                 />
                 <p className="modal-description">
-                  Necessária pra busca inteligente e análises do Fora do Radar.{' '}
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Gerar chave grátis
-                  </a>
+                  Cole aqui a chave de API usada pelo dashboard e pelas integrações. O valor é enviado no cabeçalho <code>X-Api-Key</code>.
                 </p>
               </div>
             </IntegrationCard>
