@@ -290,7 +290,7 @@ const SettingsModal = ({ settings, theme, onChange, onThemeChange, onClose }) =>
                   onChange={(e) => handleChange('apiKey', e.target.value)}
                 />
                 <p className="modal-description">
-                  Cole aqui a chave de API usada pelo dashboard e pelas integrações. O valor é enviado no cabeçalho <code>X-Api-Key</code>.
+                  Cole aqui a chave de API usada pelo dashboard e pelas integrações. Depois clique em Salvar. O valor é enviado no cabeçalho <code>X-Api-Key</code>.
                 </p>
               </div>
             </IntegrationCard>
