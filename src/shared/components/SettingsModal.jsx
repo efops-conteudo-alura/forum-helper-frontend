@@ -277,7 +277,7 @@ const SettingsModal = ({ settings, theme, onChange, onThemeChange, onClose }) =>
           <div className="settings-tab" role="tabpanel">
             <IntegrationCard
               icon="fa-wand-magic-sparkles"
-              name="Chave de API"
+              name="Google Gemini"
               status={geminiStatus}
               statusLabel={geminiStatusLabel}
             >
@@ -290,8 +290,7 @@ const SettingsModal = ({ settings, theme, onChange, onThemeChange, onClose }) =>
                   onChange={(e) => handleChange('apiKey', e.target.value)}
                 />
                 <p className="modal-description">
-                  Cole aqui a chave de API usada pelo dashboard e pelas integrações. Se você não tiver uma, o app usa a chave pública padrão automaticamente.
-                  Depois clique em Salvar. O valor é enviado no cabeçalho <code>X-Api-Key</code>.
+                  Chave opcional para usar Gemini/Google. Se você não usar essa integração, deixe em branco.
                 </p>
               </div>
             </IntegrationCard>
