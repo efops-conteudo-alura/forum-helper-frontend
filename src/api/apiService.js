@@ -7,10 +7,12 @@ import axios from 'axios';
 export const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || 'https://forum-helper-zmqxu.ondigitalocean.app/api';
 
+const PUBLIC_API_KEY = 'cbi_787afeef9bf9e982_c404854ac2b40394c63da0b9608544a4f057bd666bbdb3df';
+
 const api = axios.create({ baseURL: API_BASE_URL });
 api.interceptors.request.use((config) => {
   if (!config.headers) config.headers = {};
-  const apiKey = localStorage.getItem('googleApiKey');
+  const apiKey = localStorage.getItem('googleApiKey') || PUBLIC_API_KEY;
   if (apiKey) {
     config.headers['X-Api-Key'] = apiKey;
   }
