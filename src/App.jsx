@@ -21,6 +21,7 @@ const StatusView = lazy(() => import('./features/status/StatusView'));
 const AllocationView = lazy(() => import('./features/allocation/AllocationView'));
 const NotificationsPreviewView = lazy(() => import('./features/notifications-preview/NotificationsPreviewView'));
 const PdiView = lazy(() => import('./features/pdi/PdiView'));
+const MetricsView = lazy(() => import('./features/metrics/MetricsView'));
 
 // Spinner discreto que ocupa a tela enquanto o chunk baixa. Não usa o
 // skeleton-card pq esse Suspense cobre views muito diferentes.
@@ -201,6 +202,8 @@ function Layout({ settingsOpen, setSettingsOpen, settings, onSettingsChange, the
           <Route path="/allocation" element={<AllocationView />} />
           <Route path="/notifications-preview" element={<NotificationsPreviewView />} />
           <Route path="/pdi" element={<PdiView />} />
+          {/* Painel de Métricas — mesma lógica do /pdi: rota fora do menu, só por URL direta. */}
+          <Route path="/metrics" element={<MetricsView />} />
           <Route path="*" element={<NavigateToTopics />} />
         </Routes>
       </Suspense>

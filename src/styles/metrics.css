@@ -1,0 +1,76 @@
+/* Painel de Métricas — reaproveita .kpi-card/.panel de dashboard-modern.css,
+   só complementa com o que é específico dessa tela. */
+
+.metrics-view .metrics-hero {
+  margin-bottom: 20px;
+}
+
+.metrics-view .metrics-hero h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.metrics-view .kpi-note {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--light-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metrics-view .metrics-status {
+  color: var(--light-text-color);
+  padding: 24px 0;
+  text-align: center;
+}
+
+.metrics-view .metrics-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metrics-view .metrics-ranking-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+
+.metrics-view .metrics-ranking-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metrics-view .metrics-ranking-track {
+  background: var(--bg-color);
+  border-radius: 6px;
+  height: 18px;
+  overflow: hidden;
+}
+
+.metrics-view .metrics-ranking-bar {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.metrics-view .metrics-ranking-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-color);
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .metrics-view .metrics-ranking-row {
+    grid-template-columns: 96px 1fr 32px;
+  }
+}
