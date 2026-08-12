@@ -1,5 +1,5 @@
-/* Painel de Métricas — reaproveita .kpi-card/.panel de dashboard-modern.css,
-   só complementa com o que é específico dessa tela. */
+/* Painel de Métricas — reaproveita .kpi-card/.panel/.pill-toggle/.preset-btn
+   de dashboard-modern.css, só complementa com o que é específico dessa tela. */
 
 .metrics-view .metrics-hero {
   margin-bottom: 20px;
@@ -12,13 +12,11 @@
   color: var(--text-color);
 }
 
-.metrics-view .kpi-note {
-  margin: 2px 0 0;
-  font-size: 0.68rem;
+.metrics-view .kpi-percent {
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--light-text-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-left: 6px;
 }
 
 .metrics-view .metrics-status {
@@ -27,50 +25,165 @@
   text-align: center;
 }
 
-.metrics-view .metrics-ranking {
+/* Tabela "Entregas por pessoa" */
+.metrics-view .metrics-table-wrap {
+  overflow-x: auto;
+}
+
+.metrics-view .metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.metrics-view .metrics-table th {
+  text-align: right;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--light-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.metrics-view .metrics-table td {
+  text-align: right;
+  padding: 8px 10px;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.metrics-view .metrics-th-person,
+.metrics-view .metrics-td-person {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.metrics-view .metrics-td-total {
+  font-weight: 800;
+}
+
+.metrics-view .metrics-td-dist {
+  min-width: 140px;
+}
+
+.metrics-view .metrics-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-color);
+  flex-shrink: 0;
+}
+
+.metrics-view .metrics-dist-bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--bg-color);
+}
+
+.metrics-view .metrics-dist-seg {
+  height: 100%;
+}
+
+.metrics-view .metrics-table tfoot td {
+  font-weight: 800;
+  border-bottom: none;
+  border-top: 2px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.metrics-view .metrics-table tfoot td:first-child {
+  text-align: left;
+  color: var(--light-text-color);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Legenda de cores */
+.metrics-view .metrics-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.metrics-view .metrics-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--light-text-color);
+  font-weight: 600;
+}
+
+.metrics-view .metrics-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Esteira de Novidades */
+.metrics-view .metrics-novidades {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.metrics-view .metrics-ranking-row {
-  display: grid;
-  grid-template-columns: 150px 1fr 40px;
+.metrics-view .metrics-novidades-item {
+  display: flex;
   align-items: center;
   gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-color);
 }
 
-.metrics-view .metrics-ranking-name {
+.metrics-view .metrics-novidades-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metrics-view .metrics-novidades-text {
+  flex: 1;
   font-size: 0.85rem;
-  font-weight: 600;
   color: var(--text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.metrics-view .metrics-novidades-when {
+  font-size: 0.72rem;
+  color: var(--light-text-color);
   white-space: nowrap;
 }
 
-.metrics-view .metrics-ranking-track {
-  background: var(--bg-color);
-  border-radius: 6px;
-  height: 18px;
-  overflow: hidden;
-}
-
-.metrics-view .metrics-ranking-bar {
-  height: 100%;
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.metrics-view .metrics-ranking-value {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-color);
-  text-align: right;
-}
-
-@media (max-width: 640px) {
-  .metrics-view .metrics-ranking-row {
-    grid-template-columns: 96px 1fr 32px;
-  }
+@media (max-width: 720px) {
+  .metrics-view .metrics-table { font-size: 0.78rem; }
+  .metrics-view .metrics-td-dist { min-width: 90px; }
 }

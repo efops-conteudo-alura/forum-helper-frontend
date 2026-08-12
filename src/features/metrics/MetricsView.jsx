@@ -1,17 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { fetchDashboardStats } from '../../api/apiService';
-import { TEAM_MEMBERS, PALETTE, formatName, getPresetRange, formatYMD } from '../dashboard/helpers';
+import React, { useMemo, useState } from 'react';
+import {
+  CATEGORIES,
+  BR_TEAM_STATS,
+  LATAM_TEAM_STATS,
+  NOVIDADES_MOCK,
+  initialsOf,
+  rowTotal,
+  computeSummary,
+} from './mockData';
 
-// Fontes que ainda não têm integração (ClickUp/N8N/Discord) — cards ficam
-// como placeholder até os dados passarem a chegar via webhook.
-const COMING_SOON_CARDS = [
-  { key: 'artigos', iconClass: 'fas fa-file-lines', label: 'Artigos (feitos/revisados)', color: '#7B71FF' },
-  { key: 'imersao', iconClass: 'fas fa-graduation-cap', label: 'Imersão', color: '#FFBA05' },
-  { key: '7days', iconClass: 'fas fa-laptop-code', label: '7 Days of Code', color: '#00C86F' },
-  { key: 'discord', iconClass: 'fa-brands fa-discord', label: 'Discord', color: '#6BD1FF' },
-];
+const PRESETS = ['Ontem', 'Esta Semana', 'Este Mês', 'Último Mês', 'Este Trimestre'];
 
-function KpiCard({ iconClass, label, value, color, note }) {
+function KpiCard({ iconClass, label, value, sub, color }) {
   return (
     <div className="kpi-card" style={{ '--accent': color }}>
       <div className="kpi-icon">
@@ -19,39 +19,47 @@ function KpiCard({ iconClass, label, value, color, note }) {
       </div>
       <div className="kpi-meta">
         <p className="kpi-label">{label}</p>
-        <p className="kpi-value">{value}</p>
-        {note ? <p className="kpi-note">{note}</p> : null}
+        <p className="kpi-value">
+          {value}
+          {sub ? <span className="kpi-percent">{sub}</span> : null}
+        </p>
       </div>
     </div>
   );
 }
 
+function DistributionBar({ row, total }) {
+  return (
+    <div className="metrics-dist-bar">
+      {CATEGORIES.map((c) => {
+        const value = row[c.key] || 0;
+        if (!value) return null;
+        return (
+          <div
+            key={c.key}
+            className="metrics-dist-seg"
+            style={{ width: `${(value / total) * 100}%`, background: c.color }}
+            title={`${c.label}: ${value}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function MetricsView() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [errored, setErrored] = useState(false);
+  const [region, setRegion] = useState('BR'); // 'BR' | 'LATAM'
+  const [scope, setScope] = useState('team'); // 'team' | 'individual'
+  const [activePreset, setActivePreset] = useState('Esta Semana');
 
-  useEffect(() => {
-    let alive = true;
-    const { start, end } = getPresetRange('month');
-    fetchDashboardStats(formatYMD(start), formatYMD(end), TEAM_MEMBERS.join(','))
-      .then((result) => { if (alive) setUsers(result?.users || []); })
-      .catch(() => { if (alive) setErrored(true); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, []);
+  const allRows = region === 'BR' ? BR_TEAM_STATS : LATAM_TEAM_STATS;
+  const rows = scope === 'individual'
+    ? allRows.filter((r) => r.name === 'Victor Costa')
+    : allRows;
 
-  const ranking = useMemo(() => {
-    return TEAM_MEMBERS
-      .map((memberUsername) => {
-        const found = users.find((u) => u.username === memberUsername);
-        return { username: memberUsername, value: found?.totalSolutions || 0 };
-      })
-      .sort((a, b) => b.value - a.value);
-  }, [users]);
-
-  const totalResolvidos = ranking.reduce((sum, r) => sum + r.value, 0);
-  const maxValue = Math.max(1, ...ranking.map((r) => r.value));
+  const summary = useMemo(() => computeSummary(allRows), [allRows]);
+  const percentOf = (value) => (summary.total ? Math.round((value / summary.total) * 100) : 0);
+  const mediaPorPessoa = summary.people ? Math.round(summary.total / summary.people) : 0;
 
   return (
     <div id="metrics-view" className="view-container active dashboard-modern metrics-view">
@@ -59,61 +67,151 @@ function MetricsView() {
         <section className="dash-section metrics-hero">
           <h2>Métricas do Time</h2>
           <p className="panel-subtitle">
-            Prévia pra apresentação — Artigos, Imersão, 7 Days of Code e Discord ainda aguardam a integração via N8N.
+            Prévia pra apresentação — números de exemplo até as integrações (ClickUp, Discord, N8N) existirem de verdade.
           </p>
+        </section>
+
+        <section className="dash-filters dash-section">
+          <div className="preset-group">
+            {PRESETS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                className={`preset-btn ${activePreset === preset ? 'active-preset' : ''}`}
+                onClick={() => setActivePreset(preset)}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className="kpi-grid dash-section">
           <KpiCard
-            iconClass="fas fa-check-double"
-            label="Tópicos Resolvidos (mês)"
-            value={loading ? '…' : totalResolvidos}
-            color="#00C86F"
+            iconClass="fas fa-arrow-trend-up"
+            label="Total de Entregas"
+            value={summary.total}
+            sub={`${summary.people} pessoas`}
+            color="#06B9A1"
           />
-          {COMING_SOON_CARDS.map((card) => (
+          {CATEGORIES.map((c) => (
             <KpiCard
-              key={card.key}
-              iconClass={card.iconClass}
-              label={card.label}
-              value="—"
-              color={card.color}
-              note="Em breve"
+              key={c.key}
+              iconClass={c.icon}
+              label={c.label}
+              value={summary.totals[c.key]}
+              sub={`${percentOf(summary.totals[c.key])}%`}
+              color={c.color}
             />
           ))}
+          <KpiCard
+            iconClass="fas fa-users"
+            label="Média por Pessoa"
+            value={mediaPorPessoa}
+            color="#7B71FF"
+          />
+        </section>
+
+        <section className="panel dash-section">
+          <div className="panel-header panel-header--separated">
+            <div className="header-info">
+              <h3 className="panel-title">
+                <i className="fas fa-users" style={{ color: '#00C86F' }}></i>
+                Entregas por pessoa
+              </h3>
+              <p className="panel-subtitle">Números de exemplo — layout inspirado no mockup da Carol</p>
+            </div>
+            <div className="header-controls">
+              <div className="pill-toggle">
+                <button type="button" className={region === 'BR' ? 'active' : ''} onClick={() => setRegion('BR')}>
+                  <i className="fas fa-globe"></i> Brasil
+                </button>
+                <button type="button" className={region === 'LATAM' ? 'active' : ''} onClick={() => setRegion('LATAM')}>
+                  <i className="fas fa-globe"></i> Latam
+                </button>
+              </div>
+              <div className="pill-toggle">
+                <button type="button" className={scope === 'team' ? 'active' : ''} onClick={() => setScope('team')}>
+                  <i className="fas fa-people-group"></i> Equipe
+                </button>
+                <button type="button" className={scope === 'individual' ? 'active' : ''} onClick={() => setScope('individual')}>
+                  <i className="fas fa-user"></i> Individual
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="metrics-table-wrap">
+            <table className="metrics-table">
+              <thead>
+                <tr>
+                  <th className="metrics-th-person">PESSOA</th>
+                  {CATEGORIES.map((c) => <th key={c.key}>{c.shortLabel}</th>)}
+                  <th>TOTAL</th>
+                  <th>DISTRIBUIÇÃO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const total = rowTotal(row);
+                  return (
+                    <tr key={row.name}>
+                      <td className="metrics-td-person">
+                        <span className="metrics-avatar">{initialsOf(row.name)}</span>
+                        {row.name}
+                      </td>
+                      {CATEGORIES.map((c) => <td key={c.key}>{row[c.key]}</td>)}
+                      <td className="metrics-td-total">{total}</td>
+                      <td className="metrics-td-dist"><DistributionBar row={row} total={total} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>TOTAL {region === 'BR' ? 'BRASIL' : 'LATAM'}</td>
+                  {CATEGORIES.map((c) => (
+                    <td key={c.key} style={{ color: c.color }}>{summary.totals[c.key]}</td>
+                  ))}
+                  <td>{summary.total}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div className="metrics-legend">
+            {CATEGORIES.map((c) => (
+              <span key={c.key} className="metrics-legend-item">
+                <span className="metrics-legend-dot" style={{ background: c.color }} />
+                {c.label}
+              </span>
+            ))}
+          </div>
         </section>
 
         <section className="panel dash-section">
           <div className="panel-header">
             <h3 className="panel-title">
-              <i className="fas fa-ranking-star" style={{ color: '#00C86F' }}></i>
-              Tópicos resolvidos por pessoa
+              <i className="fas fa-bell" style={{ color: '#FFBA05' }}></i>
+              Esteira de Novidades
+              <span className="panel-badge">conceito</span>
             </h3>
-            <p className="panel-subtitle">Mês atual · já vem do BI, dado real</p>
+            <p className="panel-subtitle">
+              Ideia: quando o N8N estiver plugado, eventos assim disparam notificação de verdade (sino do header).
+            </p>
           </div>
-
-          {loading ? (
-            <p className="metrics-status">Carregando…</p>
-          ) : errored ? (
-            <p className="metrics-status">Não foi possível carregar os dados agora.</p>
-          ) : (
-            <div className="metrics-ranking">
-              {ranking.map((r, i) => (
-                <div className="metrics-ranking-row" key={r.username}>
-                  <span className="metrics-ranking-name">{formatName(r.username)}</span>
-                  <div className="metrics-ranking-track">
-                    <div
-                      className="metrics-ranking-bar"
-                      style={{
-                        width: `${Math.max(4, (r.value / maxValue) * 100)}%`,
-                        background: PALETTE[i % PALETTE.length],
-                      }}
-                    />
-                  </div>
-                  <span className="metrics-ranking-value">{r.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <ul className="metrics-novidades">
+            {NOVIDADES_MOCK.map((item, i) => (
+              <li key={i} className="metrics-novidades-item">
+                <span className="metrics-novidades-icon" style={{ background: `${item.color}22`, color: item.color }}>
+                  <i className={item.icon}></i>
+                </span>
+                <span className="metrics-novidades-text">{item.text}</span>
+                <span className="metrics-novidades-when">{item.when}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       </main>
     </div>
