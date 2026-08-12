@@ -1,6 +1,19 @@
 /* Painel de Métricas — reaproveita .kpi-card/.panel/.pill-toggle/.preset-btn
    de dashboard-modern.css, só complementa com o que é específico dessa tela. */
 
+/* .view-container trava o overflow por padrão (global.css) — cada view
+   precisa declarar o próprio scroll no <main>, igual #dashboard-view faz. */
+#metrics-view > main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+  display: block;
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
 .metrics-view .metrics-hero {
   margin-bottom: 20px;
 }
