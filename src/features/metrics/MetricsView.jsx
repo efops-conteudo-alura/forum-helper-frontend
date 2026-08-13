@@ -66,9 +66,7 @@ function MetricsView() {
       <main>
         <section className="dash-section metrics-hero">
           <h2>Métricas do Time</h2>
-          <p className="panel-subtitle">
-            Prévia pra apresentação — números de exemplo até as integrações (ClickUp, Discord, N8N) existirem de verdade.
-          </p>
+          <p className="panel-subtitle">Dados de exemplo — ClickUp, Discord e N8N ainda não estão integrados.</p>
         </section>
 
         <section className="dash-filters dash-section">
@@ -119,7 +117,7 @@ function MetricsView() {
                 <i className="fas fa-users" style={{ color: '#00C86F' }}></i>
                 Entregas por pessoa
               </h3>
-              <p className="panel-subtitle">Números de exemplo — layout inspirado no mockup da Carol</p>
+              <p className="panel-subtitle">Layout inspirado no mockup da Carol</p>
             </div>
             <div className="header-controls">
               <div className="pill-toggle">
@@ -188,9 +186,7 @@ function MetricsView() {
               Esteira de Novidades
               <span className="panel-badge">conceito</span>
             </h3>
-            <p className="panel-subtitle">
-              Ideia: quando o N8N estiver plugado, eventos assim disparam notificação de verdade (sino do header).
-            </p>
+            <p className="panel-subtitle">Quando o N8N estiver plugado, eventos assim viram notificação de verdade no sino do header.</p>
           </div>
           <ul className="metrics-novidades">
             {NOVIDADES_MOCK.map((item, i) => (
