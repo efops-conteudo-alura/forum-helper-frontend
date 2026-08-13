@@ -179,15 +179,6 @@ function MetricsView() {
               </tfoot>
             </table>
           </div>
-
-          <div className="metrics-legend">
-            {CATEGORIES.map((c) => (
-              <span key={c.key} className="metrics-legend-item">
-                <span className="metrics-legend-dot" style={{ background: c.color }} />
-                {c.label}
-              </span>
-            ))}
-          </div>
         </section>
 
         <section className="panel dash-section">

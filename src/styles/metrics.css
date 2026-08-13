@@ -129,32 +129,6 @@
   letter-spacing: 0.04em;
 }
 
-/* Legenda de cores */
-.metrics-view .metrics-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--border-color);
-}
-
-.metrics-view .metrics-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: var(--light-text-color);
-  font-weight: 600;
-}
-
-.metrics-view .metrics-legend-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
 /* Esteira de Novidades */
 .metrics-view .metrics-novidades {
   list-style: none;

@@ -30,11 +30,15 @@ export const LATAM_TEAM_STATS = [
   { name: 'Rafaela Petelin', artigosFeitos: 0, artigosRevisados: 1, topicos: 4, discord: 8, imersao: 1, sevenDays: 0 },
 ];
 
+// Variedade proposital: nem toda "novidade" é uma vitória — a ideia da
+// esteira é também sinalizar quedas/atenção, não só ranquear quem fez mais.
 export const NOVIDADES_MOCK = [
-  { icon: 'fa-solid fa-trophy', color: '#FFBA05', text: 'Daniel Nogueira bateu recorde pessoal: 8 artigos revisados essa semana', when: 'há 2h' },
-  { icon: 'fa-brands fa-discord', color: '#FF8C2A', text: 'Pico de atividade no canal #duvidas-frontend do Discord', when: 'há 5h' },
-  { icon: 'fa-solid fa-fire', color: '#DC6EBE', text: '3 pessoas concluíram uma trilha da Imersão essa semana', when: 'ontem' },
-  { icon: 'fa-solid fa-code', color: '#00C86F', text: 'Equipe completou o desafio do dia 5 do 7 Days of Code', when: 'ontem' },
+  { icon: 'fa-solid fa-trophy', color: '#FFBA05', text: 'Daniel Nogueira ultrapassou 60 tópicos resolvidos este mês — segue na liderança do time', when: 'há 2h' },
+  { icon: 'fa-solid fa-chart-line', color: '#FF8C2A', text: 'Discord: alta de 18% nas interações em relação à semana passada', when: 'há 5h' },
+  { icon: 'fa-solid fa-fire', color: '#DC6EBE', text: 'Lorena Garcia está há 5 dias seguidos ativa no 7 Days of Code', when: 'ontem' },
+  { icon: 'fa-solid fa-triangle-exclamation', color: '#F16165', text: 'Imersão: participação caiu essa semana — vale um lembrete pro time', when: 'ontem' },
+  { icon: 'fa-solid fa-bullseye', color: '#00C86F', text: 'Equipe atingiu 80% da meta mensal de artigos revisados', when: 'há 2 dias' },
+  { icon: 'fa-solid fa-star', color: '#7B71FF', text: 'Mike de Sousa revisou o primeiro artigo do trimestre', when: 'há 3 dias' },
 ];
 
 export function initialsOf(name) {
