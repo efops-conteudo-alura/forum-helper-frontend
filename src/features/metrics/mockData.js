@@ -31,14 +31,16 @@ export const LATAM_TEAM_STATS = [
 ];
 
 // Variedade proposital: nem toda "novidade" é uma vitória — a ideia da
-// esteira é também sinalizar quedas/atenção, não só ranquear quem fez mais.
+// esteira é também sinalizar quedas/atenção, não só marcos batidos.
+// De propósito, sem nome de pessoa nem comparação entre indivíduos — isso
+// não é um mural competitivo, os eventos são sempre em nível de time/categoria.
 export const NOVIDADES_MOCK = [
-  { icon: 'fa-solid fa-trophy', color: '#FFBA05', text: 'Daniel Nogueira ultrapassou 60 tópicos resolvidos este mês — segue na liderança do time', when: 'há 2h' },
+  { icon: 'fa-solid fa-flag-checkered', color: '#FFBA05', text: 'Time ultrapassou 200 tópicos resolvidos este mês', when: 'há 2h' },
   { icon: 'fa-solid fa-chart-line', color: '#FF8C2A', text: 'Discord: alta de 18% nas interações em relação à semana passada', when: 'há 5h' },
-  { icon: 'fa-solid fa-fire', color: '#DC6EBE', text: 'Lorena Garcia está há 5 dias seguidos ativa no 7 Days of Code', when: 'ontem' },
+  { icon: 'fa-solid fa-fire', color: '#DC6EBE', text: 'Equipe manteve atividade diária no 7 Days of Code por 5 dias seguidos', when: 'ontem' },
   { icon: 'fa-solid fa-triangle-exclamation', color: '#F16165', text: 'Imersão: participação caiu essa semana — vale um lembrete pro time', when: 'ontem' },
   { icon: 'fa-solid fa-bullseye', color: '#00C86F', text: 'Equipe atingiu 80% da meta mensal de artigos revisados', when: 'há 2 dias' },
-  { icon: 'fa-solid fa-star', color: '#7B71FF', text: 'Mike de Sousa revisou o primeiro artigo do trimestre', when: 'há 3 dias' },
+  { icon: 'fa-solid fa-star', color: '#7B71FF', text: 'Primeiro artigo do trimestre já foi revisado', when: 'há 3 dias' },
 ];
 
 export function initialsOf(name) {
