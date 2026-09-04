@@ -25,11 +25,13 @@
   color: var(--text-color);
 }
 
-.metrics-view .kpi-percent {
-  font-size: 0.72rem;
+.metrics-view .kpi-note {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--light-text-color);
-  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .metrics-view .metrics-status {
@@ -38,95 +40,47 @@
   text-align: center;
 }
 
-/* Tabela "Entregas por pessoa" */
-.metrics-view .metrics-table-wrap {
-  overflow-x: auto;
-}
-
-.metrics-view .metrics-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.metrics-view .metrics-table th {
-  text-align: right;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--light-text-color);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.metrics-view .metrics-table td {
-  text-align: right;
-  padding: 8px 10px;
-  color: var(--text-color);
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.metrics-view .metrics-th-person,
-.metrics-view .metrics-td-person {
-  text-align: left;
+/* Ranking/breakdown por categoria (ex.: reclamações por tipo) */
+.metrics-view .metrics-ranking {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
-  font-weight: 600;
 }
 
-.metrics-view .metrics-td-total {
-  font-weight: 800;
-}
-
-.metrics-view .metrics-td-dist {
-  min-width: 140px;
-}
-
-.metrics-view .metrics-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
-  display: inline-flex;
+.metrics-view .metrics-ranking-row {
+  display: grid;
+  grid-template-columns: 190px 1fr 40px;
   align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: var(--text-color);
-  flex-shrink: 0;
+  gap: 12px;
 }
 
-.metrics-view .metrics-dist-bar {
-  display: flex;
-  width: 100%;
-  height: 10px;
-  border-radius: 5px;
+.metrics-view .metrics-ranking-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metrics-view .metrics-ranking-track {
   background: var(--bg-color);
+  border-radius: 6px;
+  height: 16px;
+  overflow: hidden;
 }
 
-.metrics-view .metrics-dist-seg {
+.metrics-view .metrics-ranking-bar {
   height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
 }
 
-.metrics-view .metrics-table tfoot td {
-  font-weight: 800;
-  border-bottom: none;
-  border-top: 2px solid var(--border-color);
+.metrics-view .metrics-ranking-value {
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text-color);
-}
-
-.metrics-view .metrics-table tfoot td:first-child {
-  text-align: left;
-  color: var(--light-text-color);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-align: right;
 }
 
 /* Esteira de Novidades */
@@ -170,7 +124,8 @@
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
-  .metrics-view .metrics-table { font-size: 0.78rem; }
-  .metrics-view .metrics-td-dist { min-width: 90px; }
+@media (max-width: 640px) {
+  .metrics-view .metrics-ranking-row {
+    grid-template-columns: 120px 1fr 32px;
+  }
 }

@@ -1,33 +1,44 @@
-// Dados de exemplo pro painel de prévia (/metrics). Nada aqui vem de API —
-// é só pra mostrar como a tela fica quando as integrações (ClickUp/Discord/
-// N8N) estiverem plugadas. Trocar por fetch real quando o webhook existir.
+// Dados do painel /metrics. Primeira leva real veio do ClickUp via N8N
+// (testado manualmente em 2026-08-20/21) — ainda não é um pipeline agendado,
+// são números tirados na mão enquanto o webhook de ingestão não existe.
+// Sem quebra por pessoa em lugar nenhum aqui — decisão consciente, não é
+// só "ainda não fizemos": ver memória feedback_no_competitive_framing.
 
-export const CATEGORIES = [
-  { key: 'artigosFeitos', label: 'Artigos Feitos', shortLabel: 'ARTIGOS', icon: 'fa-solid fa-book-open', color: '#00C86F' },
-  { key: 'artigosRevisados', label: 'Artigos Revisados', shortLabel: 'REVISÕES', icon: 'fa-solid fa-circle-check', color: '#6BD1FF' },
-  { key: 'topicos', label: 'Tópicos Resolvidos', shortLabel: 'TÓPICOS', icon: 'fa-solid fa-comment', color: '#7B71FF' },
-  { key: 'discord', label: 'Discord', shortLabel: 'DISCORD', icon: 'fa-brands fa-discord', color: '#FF8C2A' },
-  { key: 'imersao', label: 'Imersão', shortLabel: 'IMERSÃO', icon: 'fa-solid fa-fire', color: '#DC6EBE' },
-  { key: 'sevenDays', label: '7 Days of Code', shortLabel: '7DOC', icon: 'fa-solid fa-code', color: '#FFBA05' },
-];
+// Cada métrica carrega o próprio período — os cards não fingem estar todos
+// na mesma janela de tempo até termos o filtro de data validado em todas.
+export const REAL_METRICS = {
+  artigosRevisados: {
+    total: 100,
+    periodo: 'desde o início do processo',
+  },
+  reclamacoes: {
+    total: 96,
+    periodo: 'este trimestre',
+    porTipo: [
+      { label: 'Didática', total: 29 },
+      { label: 'Conteúdo Desatualizado', total: 18 },
+      { label: 'Passos de Setup', total: 10 },
+      { label: 'Erro de Revisão', total: 9 },
+      { label: 'Profundidade Técnica', total: 9 },
+      { label: 'Falha Audiovisual', total: 8 },
+      { label: 'Material de Apoio', total: 7 },
+      { label: 'Estrutura/Ferramenta', total: 3 },
+      { label: 'Formato de Aula', total: 2 },
+      { label: 'Acessibilidade', total: 1 },
+      { label: 'Plataforma', total: 1 },
+      { label: 'Promessa Desalinhada', total: 1 },
+    ],
+  },
+};
 
-export const BR_TEAM_STATS = [
-  { name: 'Daniel Nogueira', artigosFeitos: 8, artigosRevisados: 5, topicos: 62, discord: 145, imersao: 20, sevenDays: 10 },
-  { name: 'Mike de Sousa', artigosFeitos: 6, artigosRevisados: 9, topicos: 48, discord: 110, imersao: 15, sevenDays: 8 },
-  { name: 'Lorena Garcia', artigosFeitos: 5, artigosRevisados: 7, topicos: 35, discord: 90, imersao: 12, sevenDays: 6 },
-  { name: 'Nathalia Queiroz', artigosFeitos: 4, artigosRevisados: 6, topicos: 28, discord: 75, imersao: 10, sevenDays: 7 },
-  { name: 'Armano Junior', artigosFeitos: 3, artigosRevisados: 4, topicos: 20, discord: 60, imersao: 8, sevenDays: 5 },
-  { name: 'Monalisa Silva', artigosFeitos: 3, artigosRevisados: 5, topicos: 15, discord: 45, imersao: 6, sevenDays: 4 },
-  { name: 'Rafaela Petelin', artigosFeitos: 2, artigosRevisados: 3, topicos: 12, discord: 35, imersao: 5, sevenDays: 3 },
-  { name: 'Victor Costa', artigosFeitos: 2, artigosRevisados: 2, topicos: 8, discord: 25, imersao: 3, sevenDays: 2 },
-  { name: 'Vasco Ginde', artigosFeitos: 1, artigosRevisados: 1, topicos: 5, discord: 15, imersao: 2, sevenDays: 1 },
-];
-
-export const LATAM_TEAM_STATS = [
-  { name: 'Victor Costa', artigosFeitos: 1, artigosRevisados: 1, topicos: 14, discord: 20, imersao: 4, sevenDays: 2 },
-  { name: 'Nathalia Queiroz', artigosFeitos: 1, artigosRevisados: 2, topicos: 9, discord: 16, imersao: 2, sevenDays: 1 },
-  { name: 'Monalisa Silva', artigosFeitos: 0, artigosRevisados: 1, topicos: 6, discord: 10, imersao: 1, sevenDays: 1 },
-  { name: 'Rafaela Petelin', artigosFeitos: 0, artigosRevisados: 1, topicos: 4, discord: 8, imersao: 1, sevenDays: 0 },
+// Fontes ainda sem dado nenhum (nem antigo) — Discord depende de chave do
+// Statbot (pedida ao time de Comunidade), Artigos Feitos e as demais ainda
+// não tiveram o node do N8N rodado até o fim.
+export const COMING_SOON_CARDS = [
+  { key: 'artigosFeitos', iconClass: 'fas fa-book-open', label: 'Artigos Feitos', color: '#00C86F' },
+  { key: 'imersao', iconClass: 'fas fa-graduation-cap', label: 'Imersão', color: '#FFBA05' },
+  { key: '7days', iconClass: 'fas fa-laptop-code', label: '7 Days of Code', color: '#7B71FF' },
+  { key: 'discord', iconClass: 'fa-brands fa-discord', label: 'Discord', color: '#5865F2' },
 ];
 
 // Variedade proposital: nem toda "novidade" é uma vitória — a ideia da
@@ -42,25 +53,3 @@ export const NOVIDADES_MOCK = [
   { icon: 'fa-solid fa-bullseye', color: '#00C86F', text: 'Equipe atingiu 80% da meta mensal de artigos revisados', when: 'há 2 dias' },
   { icon: 'fa-solid fa-star', color: '#7B71FF', text: 'Primeiro artigo do trimestre já foi revisado', when: 'há 3 dias' },
 ];
-
-export function initialsOf(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-export function rowTotal(row) {
-  return CATEGORIES.reduce((sum, c) => sum + (row[c.key] || 0), 0);
-}
-
-export function computeSummary(rows) {
-  const totals = { artigosFeitos: 0, artigosRevisados: 0, topicos: 0, discord: 0, imersao: 0, sevenDays: 0 };
-  rows.forEach((row) => {
-    CATEGORIES.forEach((c) => { totals[c.key] += row[c.key] || 0; });
-  });
-  const total = CATEGORIES.reduce((sum, c) => sum + totals[c.key], 0);
-  return { totals, total, people: rows.length };
-}
