@@ -1,0 +1,50 @@
+/* Telas do portão de login (SSO). Usa as variáveis de tema existentes. */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.auth-screen__card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px;
+  text-align: center;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.auth-screen__title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.auth-screen__text {
+  margin: 0 0 20px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.auth-screen__button {
+  display: inline-block;
+  padding: 10px 20px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #049f89;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.auth-screen__button:hover,
+.auth-screen__button:focus-visible {
+  background: #06b9a1;
+}

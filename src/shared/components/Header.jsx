@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import icon from '../../assets/icon.png';
 import { useToast } from '../ui/ToastProvider';
 import NotificationBell from '../notifications/NotificationBell';
+import { SSO_ENABLED } from '../../api/apiService';
+import { useAuth } from '../auth/AuthGate';
 import { useAllocationSummary } from '../../features/allocation/useAllocationSummary';
 
 const DEFAULT_SOLUTION_FLAG_HTML =
@@ -129,6 +131,7 @@ function QuickActionsMenu({ onCopySolution, onCopyFeedback }) {
 
 const Header = ({ onSettingsClick, onNavigate, currentPath }) => {
   const { showToast } = useToast();
+  const { user, logout } = useAuth();
   const isHome = currentPath === '/topics' || currentPath === '/';
   // Sumário de alocação compartilhado — alimenta o badge no item /allocation.
   const allocSummary = useAllocationSummary();
@@ -199,7 +202,7 @@ const Header = ({ onSettingsClick, onNavigate, currentPath }) => {
           })}
         </nav>
 
-        {/* AÇÕES — 3 ícones limpos: atalhos, alertas, configurações */}
+        {/* AÇÕES — atalhos, alertas, configurações (e "Sair" quando o SSO está ligado) */}
         <div className="app-header__actions">
           <QuickActionsMenu
             onCopySolution={() => copyTag('customSolutionTag', DEFAULT_SOLUTION_FLAG_HTML, 'Marcação de Solução')}
@@ -214,6 +217,16 @@ const Header = ({ onSettingsClick, onNavigate, currentPath }) => {
           >
             <i className="fas fa-cog"></i>
           </button>
+          {SSO_ENABLED ? (
+            <button
+              type="button"
+              className="app-icon-btn"
+              title={user?.email ? `Sair (${user.email})` : 'Sair'}
+              onClick={() => logout()}
+            >
+              <i className="fas fa-right-from-bracket"></i>
+            </button>
+          ) : null}
         </div>
       </div>
     </header>
