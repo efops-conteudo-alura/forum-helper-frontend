@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/auth/:path*", "destination": "https://forum-helper-backend-x4bse.ondigitalocean.app/auth/:path*" },
+    { "source": "/forum-api/:path*", "destination": "https://forum-helper-backend-x4bse.ondigitalocean.app/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
