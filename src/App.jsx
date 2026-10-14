@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import AuthGate from './shared/auth/AuthGate';
 import Header from './shared/components/Header';
 import Sidebar from './shared/components/Sidebar';
 import SettingsModal from './shared/components/SettingsModal';
@@ -88,20 +89,22 @@ function App() {
 
   return (
     <ToastProvider>
-      <TopicsProvider>
-        <NotificationsProvider>
-          <BrowserRouter>
-            <Layout
-              settingsOpen={settingsOpen}
-              setSettingsOpen={setSettingsOpen}
-              settings={settings}
-              onSettingsChange={handleSettingsChange}
-              theme={theme}
-              setTheme={setTheme}
-            />
-          </BrowserRouter>
-        </NotificationsProvider>
-      </TopicsProvider>
+      <AuthGate>
+        <TopicsProvider>
+          <NotificationsProvider>
+            <BrowserRouter>
+              <Layout
+                settingsOpen={settingsOpen}
+                setSettingsOpen={setSettingsOpen}
+                settings={settings}
+                onSettingsChange={handleSettingsChange}
+                theme={theme}
+                setTheme={setTheme}
+              />
+            </BrowserRouter>
+          </NotificationsProvider>
+        </TopicsProvider>
+      </AuthGate>
     </ToastProvider>
   );
 }

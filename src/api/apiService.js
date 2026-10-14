@@ -1,23 +1,84 @@
 import axios from 'axios';
 
+/*
+  Login único (SSO Microsoft).
+
+  Ligado com `VITE_SSO_ENABLED=true`. Nesse modo o app fala com a API Java pelo
+  MESMO domínio do frontend (proxy do Vercel / do Vite): `/forum-api/*` vira
+  `/api/*` na API e `/auth/*` é repassado como está. Assim o cookie de sessão
+  (HttpOnly) é first-party e o JavaScript nunca enxerga o token.
+
+  Desligado (padrão), tudo funciona como antes, apontando para o backend atual.
+*/
+export const SSO_ENABLED = import.meta.env.VITE_SSO_ENABLED === 'true';
+export const SSO_LOGIN_PATH = '/auth/microsoft';
+
 // Base do backend. Em dev, crie `.env.local` na raiz do frontend com:
-//   VITE_API_BASE_URL=http://localhost:8080/api
-// Sem essa env var, cai no backend de produção (DigitalOcean) — o que faz
+//   VITE_API_BASE_URL=http://localhost:8080/api      (sem SSO)
+//   VITE_SSO_ENABLED=true                            (com SSO; usa o proxy do Vite)
+// Sem env vars, cai no backend de produção (DigitalOcean) — o que faz
 // o build da Vercel funcionar de fora da caixa.
 export const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'https://forum-helper-zmqxu.ondigitalocean.app/api';
+    import.meta.env.VITE_API_BASE_URL ||
+    (SSO_ENABLED ? '/forum-api' : 'https://forum-helper-zmqxu.ondigitalocean.app/api');
 
+// Chave do backend ATUAL (modo sem SSO). Com SSO a autenticação é o cookie de sessão
+// e esta chave não é enviada — pode ser apagada junto com o backend antigo.
 const PUBLIC_API_KEY = 'cbi_787afeef9bf9e982_c404854ac2b40394c63da0b9608544a4f057bd666bbdb3df';
 
 const api = axios.create({ baseURL: API_BASE_URL });
 api.interceptors.request.use((config) => {
   if (!config.headers) config.headers = {};
-  const apiKey = localStorage.getItem('googleApiKey') || PUBLIC_API_KEY;
-  if (apiKey) {
-    config.headers['X-Api-Key'] = apiKey;
+  // A chave pessoal do Gemini (`googleApiKey`) NÃO deve ir para o servidor: ela só é usada
+  // direto do navegador (catalog/ai.js). Antes ela era enviada aqui em toda requisição.
+  if (!SSO_ENABLED && PUBLIC_API_KEY) {
+    config.headers['X-Api-Key'] = PUBLIC_API_KEY;
   }
   return config;
 });
+
+// Sessão expirada ou ausente (401) em QUALQUER chamada => volta para o login.
+// Centralizado aqui porque várias funções abaixo engolem o erro e devolvem valores vazios;
+// sem isso um 401 passaria despercebido (contadores zerados, listas vazias).
+let redirecionandoParaLogin = false;
+export function iniciarLogin() {
+  if (redirecionandoParaLogin) return;
+  redirecionandoParaLogin = true;
+  window.location.assign(SSO_LOGIN_PATH);
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const naoRedirecionar = error?.config?.skipAuthRedirect === true;
+    if (SSO_ENABLED && error?.response?.status === 401 && !naoRedirecionar) {
+      iniciarLogin();
+    }
+    return Promise.reject(error);
+  },
+);
+
+/*
+  Usuário da sessão atual. Devolve `{ email, nome }`, ou `null` se não houver sessão (401).
+  Outros erros (rede, 5xx) são propagados para a tela decidir o que mostrar.
+*/
+export async function fetchCurrentUser() {
+  try {
+    const response = await api.get('/auth/me', { skipAuthRedirect: true });
+    return response.data;
+  } catch (error) {
+    if (error?.response?.status === 401) return null;
+    throw error;
+  }
+}
+
+export async function logout() {
+  try {
+    await api.post('/auth/logout', null, { skipAuthRedirect: true });
+  } catch (error) {
+    console.error('Erro no logout:', error);
+  }
+}
 
 export const LATAM_USER_MAPPING = {
     'victos-costa': 'victor-costa',
