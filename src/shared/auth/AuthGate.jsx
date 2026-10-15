@@ -1,11 +1,16 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   SSO_ENABLED,
-  SSO_LOGIN_PATH,
   fetchCurrentUser,
   iniciarLogin,
   logout as logoutRequest,
 } from '../../api/apiService';
+import {
+  apagarMarcaDeSaida,
+  marcarSaida,
+  retirarRotaPretendida,
+  temMarcaDeSaida,
+} from './sessaoLocal';
 import '../../styles/auth.css';
 
 /*
@@ -13,11 +18,16 @@ import '../../styles/auth.css';
 
   - SSO desligado: não faz nada, só renderiza o app (comportamento anterior).
   - SSO ligado: pergunta à API quem está logado (`GET /auth/me`).
-      · sem sessão (401)  → navegação completa para /auth/microsoft (a API leva à Microsoft);
-      · com sessão        → renderiza o app;
+      · com sessão        → renderiza o app (voltando à rota guardada antes do login, se houver);
+      · sem sessão (401)  → tela de entrada com o botão "Entrar com Microsoft". Nada de
+                            redirecionar sozinho: a pessoa precisa ver que está entrando;
+      · acabou de sair    → tela "Você saiu". O botão pede à Microsoft a escolha de conta,
+                            senão ela reaproveita a sessão dela e devolve a pessoa logada;
       · `?sso_erro=...`   → a API recusou o login; mostra o motivo em vez de redirecionar de novo
                             (senão o usuário ficaria preso num loop de login).
   Os filhos só montam depois de autenticado, então nenhuma chamada à API acontece sem sessão.
+  Sessão que expira no meio do uso: o interceptor do apiService manda direto ao login (sem
+  passar por esta tela), guardando a rota para voltar ao mesmo lugar.
 */
 
 const MENSAGENS_DE_ERRO = {
@@ -39,9 +49,24 @@ function lerErroDoSso() {
   return MENSAGENS_DE_ERRO[codigo] || MENSAGENS_DE_ERRO.falha_no_login;
 }
 
-function Tela({ titulo, texto, acao }) {
+function estadoInicial() {
+  if (lerErroDoSso()) return 'erro-sso';
+  if (temMarcaDeSaida()) return 'saiu';
+  return 'carregando';
+}
+
+/* Depois do SSO o backend devolve sempre à raiz; se havia uma rota guardada, volta para ela
+   antes de montar o roteador (o BrowserRouter lê a URL ao montar). */
+function restaurarRotaPretendida() {
+  const rota = retirarRotaPretendida();
+  if (!rota) return;
+  const atual = window.location.pathname + window.location.search;
+  if (rota !== atual) window.history.replaceState(null, '', rota);
+}
+
+function Tela({ titulo, texto, acao, ocupado }) {
   return (
-    <div className="auth-screen" role="status">
+    <div className="auth-screen" role={ocupado ? 'status' : undefined}>
       <div className="auth-screen__card">
         <h1 className="auth-screen__title">{titulo}</h1>
         {texto ? <p className="auth-screen__text">{texto}</p> : null}
@@ -51,8 +76,20 @@ function Tela({ titulo, texto, acao }) {
   );
 }
 
+function BotaoEntrar({ escolherConta = false }) {
+  return (
+    <button
+      type="button"
+      className="auth-screen__button"
+      onClick={() => iniciarLogin({ escolherConta })}
+    >
+      Entrar com Microsoft
+    </button>
+  );
+}
+
 export default function AuthGate({ children }) {
-  const [estado, setEstado] = useState(() => (lerErroDoSso() ? 'erro-sso' : 'carregando'));
+  const [estado, setEstado] = useState(estadoInicial);
   const [user, setUser] = useState(null);
   const [mensagemErro, setMensagemErro] = useState(() => lerErroDoSso());
 
@@ -61,11 +98,11 @@ export default function AuthGate({ children }) {
     try {
       const atual = await fetchCurrentUser();
       if (atual) {
+        restaurarRotaPretendida();
         setUser(atual);
         setEstado('autenticado');
       } else {
-        setEstado('redirecionando');
-        iniciarLogin();
+        setEstado('login');
       }
     } catch (error) {
       console.error('Erro ao verificar a sessão:', error);
@@ -76,15 +113,19 @@ export default function AuthGate({ children }) {
 
   useEffect(() => {
     if (!SSO_ENABLED) return;
-    // Voltou do login com erro: mostra o motivo; só tenta de novo quando o usuário pedir.
-    if (estado === 'erro-sso') return;
+    // A marca de saída vale para uma carga da página só: a próxima volta a verificar a sessão.
+    apagarMarcaDeSaida();
+    // Voltou do login com erro, ou acabou de sair: fica na tela; só tenta quando o usuário pedir.
+    if (estado === 'erro-sso' || estado === 'saiu') return;
     verificarSessao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logout = useCallback(async () => {
     await logoutRequest();
-    window.location.assign('/');
+    marcarSaida();
+    // Recarga completa: zera todo o estado do app (polling, caches em memória, contexto).
+    window.location.replace('/');
   }, []);
 
   const valor = useMemo(() => ({ user, logout }), [user, logout]);
@@ -95,16 +136,32 @@ export default function AuthGate({ children }) {
     return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
   }
 
+  if (estado === 'login') {
+    return (
+      <Tela
+        titulo="Forum Helper"
+        texto="Painel do Suporte Educacional da Alura. Entre com a sua conta Microsoft da Alura para continuar."
+        acao={<BotaoEntrar />}
+      />
+    );
+  }
+
+  if (estado === 'saiu') {
+    return (
+      <Tela
+        titulo="Você saiu"
+        texto="Sua sessão no Forum Helper foi encerrada. Para entrar de novo, escolha a conta Microsoft."
+        acao={<BotaoEntrar escolherConta />}
+      />
+    );
+  }
+
   if (estado === 'erro-sso') {
     return (
       <Tela
         titulo="Não foi possível entrar"
         texto={mensagemErro}
-        acao={(
-          <a className="auth-screen__button" href={SSO_LOGIN_PATH}>
-            Entrar com Microsoft
-          </a>
-        )}
+        acao={<BotaoEntrar escolherConta />}
       />
     );
   }
@@ -123,9 +180,5 @@ export default function AuthGate({ children }) {
     );
   }
 
-  return (
-    <Tela
-      titulo={estado === 'redirecionando' ? 'Redirecionando para o login…' : 'Verificando sua sessão…'}
-    />
-  );
+  return <Tela titulo="Verificando sua sessão…" ocupado />;
 }
