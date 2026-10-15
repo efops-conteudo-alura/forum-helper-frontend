@@ -178,7 +178,7 @@ function CatalogView() {
 
   return (
     <div id="catalog-view" className="view-container active">
-      <div className="main-layout" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="main-layout" style={{ height: 'calc(100vh / var(--escala-ui, 1) - 80px)' }}>
         <section className="content-area">
           <div className="filters-bar">
             <div className="search-wrapper">

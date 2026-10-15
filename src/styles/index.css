@@ -44,3 +44,6 @@
 
 /* Regras específicas do shell React (não conflitam com o original) */
 @import './app.css';
+
+/* Escala da interface em notebooks HD (ex.: 1366x768). Deve ser o ÚLTIMO import. */
+@import './hd.css';

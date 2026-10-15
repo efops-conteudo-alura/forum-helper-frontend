@@ -1,0 +1,83 @@
+/* ==========================================================================
+   NOTEBOOKS HD (ex.: 1366x768) — escala da interface
+
+   O layout usa medidas fixas em px (cabeçalho, filtros, cartões...), pensadas para telas Full HD.
+   Em uma tela de 1366x768 (cerca de 650 px de altura útil, com a barra do navegador) o mesmo conteúdo
+   ocupa uma fatia bem maior e quase não sobra espaço para os cartões. Aqui a interface inteira é reduzida
+   de forma proporcional, só nessas telas; em Full HD (> 1400 px de largura) nada muda.
+
+   Ajuste a escala em um lugar só: --escala-ui (1 = tamanho original).
+
+   ATENÇÃO ao usar `zoom`: as unidades vh/vw também são escaladas por ele. Onde o elemento precisa ocupar a tela
+   (ou respeitar uma fração dela), divida por var(--escala-ui). Fora das telas pequenas ela vale 1, então
+   `calc(100vh / var(--escala-ui, 1))` é igual a `100vh` e não muda nada.
+   ========================================================================== */
+
+:root {
+    --escala-ui: 1;
+}
+
+/* Notebook HD: 1101–1400 px de largura. Abaixo disso valem os layouts de tablet/celular, sem escala. */
+@media (min-width: 1101px) and (max-width: 1400px) {
+    :root {
+        --escala-ui: 0.9;
+    }
+}
+
+@media (min-width: 1101px) and (max-width: 1400px) {
+    /* Textos que já eram bem pequenos (≈10 px) ficariam ilegíveis depois da escala: mantêm ≈9,5 px na tela. */
+    .pulse-stat__lbl,
+    .perf-stat-lbl,
+    .pulse-bar-label,
+    .pulse-legend {
+        font-size: 10.5px;
+    }
+
+    body {
+        zoom: var(--escala-ui);
+        width: calc(100vw / var(--escala-ui));
+        height: calc(100vh / var(--escala-ui));
+    }
+
+    #app {
+        width: calc(100vw / var(--escala-ui));
+        height: calc(100vh / var(--escala-ui));
+    }
+
+    /* ---- painéis e janelas que dependem da altura/largura da tela ---- */
+    .alloc-central {
+        max-height: calc(86vh / var(--escala-ui));
+    }
+
+    .alloc-drawer {
+        height: calc(100vh / var(--escala-ui));
+        width: min(440px, calc(100vw / var(--escala-ui)));
+    }
+
+    .modal {
+        max-height: calc(100vh / var(--escala-ui) - 40px);
+    }
+
+    .dashboard-modern-modal {
+        max-height: calc(90vh / var(--escala-ui));
+    }
+
+    .view-modal-body {
+        max-height: calc(85vh / var(--escala-ui));
+    }
+
+    .notification-dropdown {
+        max-width: calc(100vw / var(--escala-ui) - 24px);
+        max-height: min(620px, calc(100vh / var(--escala-ui) - 80px));
+    }
+
+    #forum-counter {
+        max-height: calc(100vh / var(--escala-ui) - 104px);
+    }
+
+    /* O PDI usa arrastar-e-soltar e posiciona menus por coordenadas medidas, que não combinam com `zoom`.
+       Ele volta à escala normal (e está oculto do menu enquanto está em desenvolvimento). */
+    .pdi-view {
+        zoom: calc(1 / var(--escala-ui));
+    }
+}

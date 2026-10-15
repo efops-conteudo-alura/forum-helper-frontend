@@ -28,7 +28,7 @@ function FormModal({
         </div>
 
         <form id="form-add-task" onSubmit={onSubmit}>
-          <div className="mural-modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
+          <div className="mural-modal-body" style={{ maxHeight: 'calc(72vh / var(--escala-ui, 1))', overflowY: 'auto' }}>
             <div className="mural-input-group">
               <label>Título</label>
               <input
