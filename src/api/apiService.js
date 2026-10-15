@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { guardarRotaAtual } from '../shared/auth/sessaoLocal';
 
 /*
   Login único (SSO Microsoft).
@@ -12,6 +13,9 @@ import axios from 'axios';
 */
 export const SSO_ENABLED = import.meta.env.VITE_SSO_ENABLED === 'true';
 export const SSO_LOGIN_PATH = '/auth/microsoft';
+// Mesmo início de login, mas pedindo à Microsoft que mostre a escolha de conta. Usado depois
+// de sair: sem isso a Microsoft reaproveita a sessão dela e devolve a pessoa logada na hora.
+export const SSO_LOGIN_PATH_ESCOLHER_CONTA = '/auth/microsoft?prompt=select_account';
 
 // Base do backend. Em dev, crie `.env.local` na raiz do frontend com:
 //   VITE_API_BASE_URL=http://localhost:8080/api      (sem SSO)
@@ -41,10 +45,12 @@ api.interceptors.request.use((config) => {
 // Centralizado aqui porque várias funções abaixo engolem o erro e devolvem valores vazios;
 // sem isso um 401 passaria despercebido (contadores zerados, listas vazias).
 let redirecionandoParaLogin = false;
-export function iniciarLogin() {
+export function iniciarLogin({ escolherConta = false } = {}) {
   if (redirecionandoParaLogin) return;
   redirecionandoParaLogin = true;
-  window.location.assign(SSO_LOGIN_PATH);
+  // O SSO devolve o navegador à raiz; o AuthGate usa isto para voltar à rota de origem.
+  guardarRotaAtual();
+  window.location.assign(escolherConta ? SSO_LOGIN_PATH_ESCOLHER_CONTA : SSO_LOGIN_PATH);
 }
 
 api.interceptors.response.use(

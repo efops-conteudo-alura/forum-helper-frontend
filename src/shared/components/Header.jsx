@@ -129,6 +129,13 @@ function QuickActionsMenu({ onCopySolution, onCopyFeedback }) {
   );
 }
 
+/* Primeiro nome de quem está logado; sem nome, a parte do e-mail antes do @. */
+function primeiroNome(user) {
+  const nome = (user?.nome || '').trim();
+  if (nome && nome !== user?.email) return nome.split(/\s+/)[0];
+  return (user?.email || '').split('@')[0];
+}
+
 const Header = ({ onSettingsClick, onNavigate, currentPath }) => {
   const { showToast } = useToast();
   const { user, logout } = useAuth();
@@ -218,14 +225,23 @@ const Header = ({ onSettingsClick, onNavigate, currentPath }) => {
             <i className="fas fa-cog"></i>
           </button>
           {SSO_ENABLED ? (
-            <button
-              type="button"
-              className="app-icon-btn"
-              title={user?.email ? `Sair (${user.email})` : 'Sair'}
-              onClick={() => logout()}
-            >
-              <i className="fas fa-right-from-bracket"></i>
-            </button>
+            <>
+              {/* Quem está logado: ajuda a notar quando entrou com a conta errada. */}
+              {user ? (
+                <span className="app-header__user" title={user.email || undefined}>
+                  <i className="fas fa-user" aria-hidden="true"></i>
+                  <span className="app-header__user-name">{primeiroNome(user)}</span>
+                </span>
+              ) : null}
+              <button
+                type="button"
+                className="app-icon-btn"
+                title={user?.email ? `Sair (${user.email})` : 'Sair'}
+                onClick={() => logout()}
+              >
+                <i className="fas fa-right-from-bracket"></i>
+              </button>
+            </>
           ) : null}
         </div>
       </div>
