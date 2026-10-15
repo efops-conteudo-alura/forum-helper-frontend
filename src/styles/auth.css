@@ -1,6 +1,6 @@
 /* Telas do portão de login (SSO). Usa as variáveis de tema existentes. */
 .auth-screen {
-  min-height: 100vh;
+  min-height: calc(100vh / var(--escala-ui, 1));
   display: flex;
   align-items: center;
   justify-content: center;
