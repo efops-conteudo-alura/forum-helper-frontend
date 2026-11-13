@@ -39,6 +39,8 @@ Para usar a API Java local com SSO, criar `.env.local` com `VITE_SSO_ENABLED=tru
 
 Produção: site estático na Vercel com `VITE_SSO_ENABLED=true`. O `vercel.json` repassa `/auth/*` e `/forum-api/*` para a API Java na DigitalOcean (mesmo domínio, para o cookie de sessão ser first-party) e manda o resto para `index.html`. Não há testes, ESLint nem CI.
 
+Para a VPS da Hostinger há um `Dockerfile` (build do Vite com `VITE_SSO_ENABLED=true` e `VITE_FIREBASE_API_KEY` como `ARG`, servido por nginx sem root) e um `nginx.conf` que faz o papel do `vercel.json` (`/auth` e `/forum-api` para o serviço `backend` pela rede interna do Compose, o resto para `index.html`). A imagem é publicada no ghcr.io por `.github/workflows/publicar-imagem.yml`, que lê a variável de repositório `VITE_FIREBASE_API_KEY`. O Compose e o roteiro ficam no repositório do backend (`deploy/hostinger/`).
+
 ## Variáveis de ambiente
 
 | Variável | Uso |
