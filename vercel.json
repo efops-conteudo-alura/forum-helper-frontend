@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/auth/:path*", "destination": "https://forum-helper-backend-x4bse.ondigitalocean.app/auth/:path*" },
-    { "source": "/forum-api/:path*", "destination": "https://forum-helper-backend-x4bse.ondigitalocean.app/api/:path*" },
+    { "source": "/auth/:path*", "destination": "https://forum-api.srv1466901.hstgr.cloud/auth/:path*" },
+    { "source": "/forum-api/:path*", "destination": "https://forum-api.srv1466901.hstgr.cloud/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
