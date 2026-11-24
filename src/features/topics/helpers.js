@@ -1,4 +1,4 @@
-// Constantes e funções puras usadas pela TopicsView e RescuePanel.
+// Constantes e funções puras usadas pela TopicsView.
 // Sem React, sem DOM — fáceis de testar isoladamente.
 
 export const CATEGORY_BUTTONS = [
