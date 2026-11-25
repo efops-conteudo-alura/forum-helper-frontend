@@ -23,6 +23,39 @@ export const PRIORITY_FILTERS = [
   { value: 'Feedback', label: 'Feedback', cssClass: 'feedback' },
 ];
 
+// Status do tópico, vindo da API (`status`):
+// - SEM_RESPOSTA: lista "sem resposta" do fórum, ninguém respondeu.
+// - SEM_RESPOSTA_OFICIAL: consulta do BI, alunos responderam mas ninguém da Alura.
+//   Fica fora de toda contagem de SLA (filtro, cores do card, radar, foco, saúde da fila).
+export const STATUS_SEM_RESPOSTA = 'SEM_RESPOSTA';
+export const STATUS_SEM_RESPOSTA_OFICIAL = 'SEM_RESPOSTA_OFICIAL';
+
+export const STATUS_INFO = {
+  [STATUS_SEM_RESPOSTA]: {
+    label: 'Sem resposta',
+    cssClass: 'sem-resposta',
+    icon: 'fa-comment-slash',
+    hint: 'Ninguém respondeu ainda',
+  },
+  [STATUS_SEM_RESPOSTA_OFICIAL]: {
+    label: 'Sem resposta oficial',
+    cssClass: 'sem-resposta-oficial',
+    icon: 'fa-user-graduate',
+    hint: 'Alunos responderam, ninguém da Alura',
+  },
+};
+
+export const STATUS_FILTERS = [
+  { value: 'Todos', label: 'Todos', cssClass: '' },
+  { value: STATUS_SEM_RESPOSTA, label: STATUS_INFO[STATUS_SEM_RESPOSTA].label, cssClass: 'sem-resposta' },
+  { value: STATUS_SEM_RESPOSTA_OFICIAL, label: STATUS_INFO[STATUS_SEM_RESPOSTA_OFICIAL].label, cssClass: 'sem-resposta-oficial' },
+];
+
+/** O tópico entra nas contagens de SLA? Os "sem resposta oficial" não entram. */
+export function entraNoSla(topic) {
+  return topic?.status !== STATUS_SEM_RESPOSTA_OFICIAL;
+}
+
 export const categoryClassMap = {
   'Front-end': 'frontend',
   'Programação': 'programacao',
@@ -123,9 +156,13 @@ export function normalizeTopic(raw) {
   const priority = raw.priority || raw.ia_analysis?.prioridade || getRandomPriority();
   const claimedBy = raw.claimedBy || raw.claimed_by || null;
   const isClaimed = raw.isClaimed || Boolean(claimedBy);
+  const status = raw.status === STATUS_SEM_RESPOSTA_OFICIAL ? STATUS_SEM_RESPOSTA_OFICIAL : STATUS_SEM_RESPOSTA;
+  const replyCount = Number.isFinite(raw.replyCount) ? raw.replyCount : null;
 
   return {
     ...raw,
+    status,
+    replyCount,
     title,
     link,
     category,

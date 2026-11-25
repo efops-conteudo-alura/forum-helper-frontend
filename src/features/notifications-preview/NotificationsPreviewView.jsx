@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTopics } from '../../shared/context/TopicsContext';
+import { entraNoSla } from '../topics/helpers';
 import { useNotifications } from '../../shared/notifications/NotificationsContext';
 import { fetchUpcomingEvents } from '../../shared/notifications/clickupSync';
 import ClickupIcon from '../../shared/notifications/ClickupIcon';
@@ -208,8 +209,9 @@ function NotificationsPreviewView() {
 
   const snapshot = useMemo(() => {
     const total = topics.length;
-    const sla = topics.filter((t) => (t.ageInDays || 0) >= 1 && (t.ageInDays || 0) < 2).length;
-    const urgent = topics.filter((t) => (t.ageInDays || 0) >= 2).length;
+    const comSla = topics.filter(entraNoSla);
+    const sla = comSla.filter((t) => (t.ageInDays || 0) >= 1 && (t.ageInDays || 0) < 2).length;
+    const urgent = comSla.filter((t) => (t.ageInDays || 0) >= 2).length;
     const claimed = topics.filter((t) => t.isClaimed).length;
     return { total, sla, urgent, claimed };
   }, [topics]);

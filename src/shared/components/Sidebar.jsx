@@ -6,6 +6,7 @@ import {
   getLatamUsername,
 } from '../../api/apiService';
 import { useTopics } from '../context/TopicsContext';
+import { entraNoSla } from '../../features/topics/helpers';
 import {
   useAllocationItems,
   useAllocationSummary,
@@ -535,7 +536,8 @@ const Sidebar = ({ username, displayName, meta, collapsed = false, onToggle }) =
   const overview = useMemo(() => {
     const total = topics.length;
     const claimed = topics.filter((t) => t.isClaimed).length;
-    const delayed = topics.filter((t) => t.ageInDays >= 1).length;
+    // "Sem resposta oficial" fica fora do SLA (helpers.js, entraNoSla).
+    const delayed = topics.filter((t) => entraNoSla(t) && t.ageInDays >= 1).length;
     const ages = topics.map((t) => t.ageInDays || 0);
     const maxAge = ages.length ? Math.max(...ages) : 0;
     const avgAge = total > 0 ? ages.reduce((a, b) => a + b, 0) / total : 0;
@@ -548,7 +550,7 @@ const Sidebar = ({ username, displayName, meta, collapsed = false, onToggle }) =
     let attention = 0;
     let urgent = 0;
     topics.forEach((t) => {
-      const age = t.ageInDays || 0;
+      const age = entraNoSla(t) ? t.ageInDays || 0 : 0;
       if (age >= 2) urgent += 1;
       else if (age >= 1) attention += 1;
       else ok += 1;

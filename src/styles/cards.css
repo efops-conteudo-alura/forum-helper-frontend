@@ -524,3 +524,75 @@ body.dark-mode .topic-card.is-urgent {
         transform: translateX(100%);
     }
 }
+
+/* ==========================================================================
+   STATUS DO TÓPICO — tag principal do card
+   "Sem resposta" (ninguém respondeu, vem do fórum) e "Sem resposta oficial"
+   (alunos responderam, ninguém da Alura; vem do BI e fica fora do SLA).
+   A categoria desce para um chip discreto ao lado da idade; a cor dela segue
+   na borda esquerda do card.
+   ========================================================================== */
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.8rem 0.35rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.status-tag i {
+    font-size: 0.8rem;
+}
+
+.status-tag.sem-resposta {
+    color: var(--cor-sem-resposta);
+    background: var(--cor-sem-resposta-bg);
+    border-color: color-mix(in srgb, var(--cor-sem-resposta) 35%, transparent);
+}
+
+.status-tag.sem-resposta-oficial {
+    color: var(--cor-sem-resposta-oficial);
+    background: var(--cor-sem-resposta-oficial-bg);
+    border-color: color-mix(in srgb, var(--cor-sem-resposta-oficial) 35%, transparent);
+}
+
+/* No fundo âmbar do SLA a tag precisa de fundo sólido para não sumir. */
+.topic-card.is-sla .status-tag {
+    background: var(--card-bg-color);
+}
+
+.topic-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+}
+
+.topic-meta .topic-age {
+    margin-top: 0;
+}
+
+/* Categoria como chip secundário (antes era a tag principal do card). */
+.topic-meta .category-tag {
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+}
+
+.topic-replies {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.6rem 0 0;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--cor-sem-resposta-oficial);
+}

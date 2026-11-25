@@ -23,6 +23,11 @@ import {
   parseAgeToDays,
   normalizeTopic,
   getClaimedName,
+  STATUS_INFO,
+  STATUS_FILTERS,
+  STATUS_SEM_RESPOSTA,
+  STATUS_SEM_RESPOSTA_OFICIAL,
+  entraNoSla,
 } from './helpers';
 
 /*
@@ -45,7 +50,8 @@ const TopicCard = memo(function TopicCard({
   const catClass = categoryClassMap[topic.category] || 'default';
   const priorityClass = priorityClassMap[topic.priority] || 'default';
   const bbMarker = 'Tópico privado de empresa';
-  const isBb = topic.title.includes(bbMarker);
+  // Raspados do BB vêm marcados no título; os do BI trazem `bb`.
+  const isBb = Boolean(topic.bb) || topic.title.includes(bbMarker);
   const title = topic.title.replace(bbMarker, '').trim();
   // Sem fallback ui-avatars.com aqui — UserAvatar gera fallback local quando
   // a URL é vazia ou a imagem 404. Evita dependência externa que pode estar
@@ -54,15 +60,26 @@ const TopicCard = memo(function TopicCard({
   const authorName = getClaimedName(topic.claimedBy) || topic.category || 'Autor';
   const claimedAvatarSrc = topic.claimedBy?.avatar || '';
   const claimedName = getClaimedName(topic.claimedBy) || 'Em atendimento';
+  // A tag de status é a principal do card: diz se ninguém respondeu ou se só alunos responderam.
+  // "Sem resposta oficial" não entra no SLA, então não ganha as cores de SLA/urgente.
+  const statusInfo = STATUS_INFO[topic.status] || STATUS_INFO[STATUS_SEM_RESPOSTA];
+  const isOficial = topic.status === STATUS_SEM_RESPOSTA_OFICIAL;
+  const contaSla = entraNoSla(topic);
+  const categoryLabel = categoryLabelMap[topic.category] || topic.category;
+  const replies = topic.replyCount;
+  const repliesText = replies === 1 ? '1 resposta de aluno' : `${replies} respostas de alunos`;
 
   return (
     <div
       data-topic-link={topic.link}
-      className={`topic-card ${catClass} ${priorityClass} ${topic.ageInDays >= 1 ? 'is-sla' : ''} ${topic.ageInDays >= 2 ? 'is-urgent' : ''}`}
+      className={`topic-card ${catClass} ${priorityClass} status-${statusInfo.cssClass} ${contaSla && topic.ageInDays >= 1 ? 'is-sla' : ''} ${contaSla && topic.ageInDays >= 2 ? 'is-urgent' : ''}`}
       style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
     >
       <div className="card-header">
-        <span className="category-tag">{categoryLabelMap[topic.category] || topic.category}</span>
+        <span className={`status-tag ${statusInfo.cssClass}`} title={statusInfo.hint}>
+          <i className={`fas ${statusInfo.icon}`} aria-hidden="true"></i>
+          {statusInfo.label}
+        </span>
         <div className="card-tags-right">
           {isBb ? <span className="bb-tag">BB</span> : null}
           <span className="priority-tag">{topic.priority}</span>
@@ -74,7 +91,16 @@ const TopicCard = memo(function TopicCard({
             {title || 'Sem título'}
           </a>
         </h2>
-        <p className="topic-age">{topic.daysText || 'Sem informação de idade'}</p>
+        <div className="topic-meta">
+          <span className="category-tag">{categoryLabel}</span>
+          <span className="topic-age">{topic.daysText || 'Sem informação de idade'}</span>
+        </div>
+        {isOficial ? (
+          <p className="topic-replies">
+            <i className="fas fa-comments" aria-hidden="true"></i>
+            {Number.isFinite(replies) ? `${repliesText}, nenhuma da Alura` : statusInfo.hint}
+          </p>
+        ) : null}
       </div>
       <div className="card-footer">
         <div className="author-info">
@@ -133,6 +159,7 @@ function TopicsView({ username: initialUsername }) {
   const [onlyMine, setOnlyMine] = useState(false);
   const [sort, setSort] = useState('newest');
   const [priorityFilter, setPriorityFilter] = useState('Todos');
+  const [statusFilter, setStatusFilter] = useState('Todos');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [claimingLink, setClaimingLink] = useState(null);
   const [releasingLink, setReleasingLink] = useState(null);
@@ -264,6 +291,7 @@ function TopicsView({ username: initialUsername }) {
     setSelectedCategories(focus.recommended);
     setSort('oldest');
     setPriorityFilter('Todos');
+    setStatusFilter('Todos');
     setError(null);
     showToast(`Foco aplicado: ${focus.recommended.join(' + ')}`, 'info');
   }, [focus, showToast]);
@@ -282,9 +310,13 @@ function TopicsView({ username: initialUsername }) {
       result = result.filter((topic) => selectedCategories.includes(topic.category));
     }
 
+    if (statusFilter !== 'Todos') {
+      result = result.filter((topic) => topic.status === statusFilter);
+    }
+
     if (priorityFilter !== 'Todos') {
       if (priorityFilter === 'SLA') {
-        result = result.filter((topic) => topic.ageInDays >= 1);
+        result = result.filter((topic) => entraNoSla(topic) && topic.ageInDays >= 1);
       } else {
         result = result.filter((topic) => topic.priority === priorityFilter);
       }
@@ -303,7 +335,14 @@ function TopicsView({ username: initialUsername }) {
     });
 
     return result;
-  }, [topics, search, selectedCategories, priorityFilter, onlyMine, sort, username]);
+  }, [topics, search, selectedCategories, statusFilter, priorityFilter, onlyMine, sort, username]);
+
+  const statusCounts = useMemo(() => {
+    return topics.reduce((counts, topic) => {
+      counts[topic.status] = (counts[topic.status] || 0) + 1;
+      return counts;
+    }, { Todos: topics.length });
+  }, [topics]);
 
   const categoryCounts = useMemo(() => {
     return topics.reduce((counts, topic) => {
@@ -458,6 +497,23 @@ function TopicsView({ username: initialUsername }) {
                     </label>
                   </div>
                 </div>
+              </div>
+
+              <div className="status-filter-row" role="group" aria-label="Filtrar por status">
+                {STATUS_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    className={`status-chip ${filter.cssClass} ${statusFilter === filter.value ? 'active' : ''}`.trim()}
+                    onClick={() => setStatusFilter(filter.value)}
+                    title={STATUS_INFO[filter.value]?.hint || 'Todos os tópicos'}
+                  >
+                    {STATUS_INFO[filter.value] ? (
+                      <i className={`fas ${STATUS_INFO[filter.value].icon}`} aria-hidden="true"></i>
+                    ) : null}
+                    <span>{filter.label}</span>
+                    <span className="status-chip-count">{statusCounts[filter.value] || 0}</span>
+                  </button>
+                ))}
               </div>
 
               <div className="filters-bottom-row">
