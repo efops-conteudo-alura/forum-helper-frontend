@@ -6,6 +6,7 @@ import {
   getLatamUsername,
 } from '../../api/apiService';
 import { useTopics } from '../context/TopicsContext';
+import { entraNoSla } from '../../features/topics/helpers';
 import { useNotifications } from './NotificationsContext';
 import { runClickUpSync } from './clickupSync';
 
@@ -242,7 +243,8 @@ function NotificationsHub({ username, meta, clickupToken }) {
     const items = [];
     const isFocused = (cat) => focusCategories.includes(cat);
 
-    const allCritical = topics.filter((t) => (t.ageInDays || 0) >= 2);
+    // "Sem resposta oficial" fica fora do radar de SLA (helpers.js, entraNoSla).
+    const allCritical = topics.filter((t) => entraNoSla(t) && (t.ageInDays || 0) >= 2);
     if (allCritical.length > 0) {
       const focusedCritical = allCritical.find((t) => isFocused(t.category));
       const previewTopic = focusedCritical || allCritical[0];
@@ -264,6 +266,7 @@ function NotificationsHub({ username, meta, clickupToken }) {
     // DIGEST: tópicos no intervalo 12-24h (vão virar urgentes em breve).
     // Em vez de 1 item por tópico, mostra 1 item resumindo o total.
     const soon = topics.filter((t) => {
+      if (!entraNoSla(t)) return false;
       const a = t.ageInDays || 0;
       return a >= 0.5 && a < 1;
     });

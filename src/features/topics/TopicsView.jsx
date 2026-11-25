@@ -4,14 +4,12 @@ import {
   fetchFocusData,
   claimTopic,
   unclaimTopic,
-  fetchRescueQueue,
   fetchAvatarFromBackend,
 } from '../../api/apiService';
 import { useTopics } from '../../shared/context/TopicsContext';
 import { useToast } from '../../shared/ui/ToastProvider';
 import { fetchUpcomingEvents } from '../../shared/notifications/clickupSync';
 import EventsBanner from '../events/EventsBanner';
-import RescuePanel from './RescuePanel';
 import FocusBanner from './FocusBanner';
 import UserAvatar from '../../shared/components/UserAvatar';
 import { computeFocus } from './focusEngine';
@@ -25,6 +23,11 @@ import {
   parseAgeToDays,
   normalizeTopic,
   getClaimedName,
+  STATUS_INFO,
+  STATUS_FILTERS,
+  STATUS_SEM_RESPOSTA,
+  STATUS_SEM_RESPOSTA_OFICIAL,
+  entraNoSla,
 } from './helpers';
 
 /*
@@ -47,7 +50,8 @@ const TopicCard = memo(function TopicCard({
   const catClass = categoryClassMap[topic.category] || 'default';
   const priorityClass = priorityClassMap[topic.priority] || 'default';
   const bbMarker = 'Tópico privado de empresa';
-  const isBb = topic.title.includes(bbMarker);
+  // Raspados do BB vêm marcados no título; os do BI trazem `bb`.
+  const isBb = Boolean(topic.bb) || topic.title.includes(bbMarker);
   const title = topic.title.replace(bbMarker, '').trim();
   // Sem fallback ui-avatars.com aqui — UserAvatar gera fallback local quando
   // a URL é vazia ou a imagem 404. Evita dependência externa que pode estar
@@ -56,15 +60,26 @@ const TopicCard = memo(function TopicCard({
   const authorName = getClaimedName(topic.claimedBy) || topic.category || 'Autor';
   const claimedAvatarSrc = topic.claimedBy?.avatar || '';
   const claimedName = getClaimedName(topic.claimedBy) || 'Em atendimento';
+  // A tag de status é a principal do card: diz se ninguém respondeu ou se só alunos responderam.
+  // "Sem resposta oficial" não entra no SLA, então não ganha as cores de SLA/urgente.
+  const statusInfo = STATUS_INFO[topic.status] || STATUS_INFO[STATUS_SEM_RESPOSTA];
+  const isOficial = topic.status === STATUS_SEM_RESPOSTA_OFICIAL;
+  const contaSla = entraNoSla(topic);
+  const categoryLabel = categoryLabelMap[topic.category] || topic.category;
+  const replies = topic.replyCount;
+  const repliesText = replies === 1 ? '1 resposta de aluno' : `${replies} respostas de alunos`;
 
   return (
     <div
       data-topic-link={topic.link}
-      className={`topic-card ${catClass} ${priorityClass} ${topic.ageInDays >= 1 ? 'is-sla' : ''} ${topic.ageInDays >= 2 ? 'is-urgent' : ''}`}
+      className={`topic-card ${catClass} ${priorityClass} status-${statusInfo.cssClass} ${contaSla && topic.ageInDays >= 1 ? 'is-sla' : ''} ${contaSla && topic.ageInDays >= 2 ? 'is-urgent' : ''}`}
       style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
     >
       <div className="card-header">
-        <span className="category-tag">{categoryLabelMap[topic.category] || topic.category}</span>
+        <span className={`status-tag ${statusInfo.cssClass}`} title={statusInfo.hint}>
+          <i className={`fas ${statusInfo.icon}`} aria-hidden="true"></i>
+          {statusInfo.label}
+        </span>
         <div className="card-tags-right">
           {isBb ? <span className="bb-tag">BB</span> : null}
           <span className="priority-tag">{topic.priority}</span>
@@ -76,7 +91,16 @@ const TopicCard = memo(function TopicCard({
             {title || 'Sem título'}
           </a>
         </h2>
-        <p className="topic-age">{topic.daysText || 'Sem informação de idade'}</p>
+        <div className="topic-meta">
+          <span className="category-tag">{categoryLabel}</span>
+          <span className="topic-age">{topic.daysText || 'Sem informação de idade'}</span>
+        </div>
+        {isOficial ? (
+          <p className="topic-replies">
+            <i className="fas fa-comments" aria-hidden="true"></i>
+            {Number.isFinite(replies) ? `${repliesText}, nenhuma da Alura` : statusInfo.hint}
+          </p>
+        ) : null}
       </div>
       <div className="card-footer">
         <div className="author-info">
@@ -135,18 +159,14 @@ function TopicsView({ username: initialUsername }) {
   const [onlyMine, setOnlyMine] = useState(false);
   const [sort, setSort] = useState('newest');
   const [priorityFilter, setPriorityFilter] = useState('Todos');
+  const [statusFilter, setStatusFilter] = useState('Todos');
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [activeTab, setActiveTab] = useState('topics');
   const [claimingLink, setClaimingLink] = useState(null);
   const [releasingLink, setReleasingLink] = useState(null);
   // Guarda o título do último alerta dispensado. Quando a situação muda
   // (título novo), o banner volta — então dismiss não silencia futuros alertas.
   const [dismissedTitle, setDismissedTitle] = useState(null);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  // Conta tópicos do "Fora do Radar" que precisam de intervenção da IA.
-  // Usado pra alimentar o badge da master tab — quem está em "Tópicos em
-  // aberto" precisa ver imediatamente se há algo urgente do outro lado.
-  const [rescueAlertCount, setRescueAlertCount] = useState(0);
 
   const loadFocus = useCallback(async () => {
     try {
@@ -186,42 +206,12 @@ function TopicsView({ username: initialUsername }) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (username && activeTab === 'topics') {
+      if (username) {
         loadTopics({ silent: true });
       }
     }, 15000);
     return () => clearInterval(interval);
-  }, [loadTopics, username, activeTab]);
-
-  // Polling leve da fila de resgate só pra atualizar o badge da master tab.
-  // Roda mesmo na aba "topics" — esse é justamente o cenário onde o usuário
-  // precisa do alerta visual (ele está em outra aba e não vê o conteúdo).
-  // Intervalo maior (45s) pra não martelar a API.
-  useEffect(() => {
-    if (!username) return undefined;
-    let alive = true;
-    const refresh = async () => {
-      try {
-        const payload = await fetchRescueQueue();
-        if (!alive) return;
-        const topicsList = payload?.topics || [];
-        const needsAction = topicsList.filter((t) => {
-          if (!t.ia_analysis || t.rescue_status === 'ERROR') return false;
-          if ((t.ia_analysis.motivo_intervencao || '').includes('Falha')) return false;
-          return t.ia_analysis.intervencao_necessaria === true;
-        }).length;
-        setRescueAlertCount(needsAction);
-      } catch {
-        // silencia — badge fica no último valor conhecido.
-      }
-    };
-    refresh();
-    const id = setInterval(refresh, 45000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, [username]);
+  }, [loadTopics, username]);
 
   // Carrega eventos próximos do Radar (ClickUp). Sem token = silencia.
   // Refresh leve a cada 5 min — eventos não mudam minuto a minuto.
@@ -301,6 +291,7 @@ function TopicsView({ username: initialUsername }) {
     setSelectedCategories(focus.recommended);
     setSort('oldest');
     setPriorityFilter('Todos');
+    setStatusFilter('Todos');
     setError(null);
     showToast(`Foco aplicado: ${focus.recommended.join(' + ')}`, 'info');
   }, [focus, showToast]);
@@ -319,9 +310,13 @@ function TopicsView({ username: initialUsername }) {
       result = result.filter((topic) => selectedCategories.includes(topic.category));
     }
 
+    if (statusFilter !== 'Todos') {
+      result = result.filter((topic) => topic.status === statusFilter);
+    }
+
     if (priorityFilter !== 'Todos') {
       if (priorityFilter === 'SLA') {
-        result = result.filter((topic) => topic.ageInDays >= 1);
+        result = result.filter((topic) => entraNoSla(topic) && topic.ageInDays >= 1);
       } else {
         result = result.filter((topic) => topic.priority === priorityFilter);
       }
@@ -340,7 +335,14 @@ function TopicsView({ username: initialUsername }) {
     });
 
     return result;
-  }, [topics, search, selectedCategories, priorityFilter, onlyMine, sort, username]);
+  }, [topics, search, selectedCategories, statusFilter, priorityFilter, onlyMine, sort, username]);
+
+  const statusCounts = useMemo(() => {
+    return topics.reduce((counts, topic) => {
+      counts[topic.status] = (counts[topic.status] || 0) + 1;
+      return counts;
+    }, { Todos: topics.length });
+  }, [topics]);
 
   const categoryCounts = useMemo(() => {
     return topics.reduce((counts, topic) => {
@@ -418,214 +420,195 @@ function TopicsView({ username: initialUsername }) {
     <div id="topics-view" className="view-container active">
       <main>
         <div className="content-wrapper">
-          <div className="master-tabs-container">
-            <button
-              type="button"
-              className={`master-tab ${activeTab === 'topics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('topics')}
-            >
-              <i className="fas fa-list"></i>
-              <span>Tópicos em aberto</span>
-              {topics.length > 0 ? (
-                <span className="master-tab-badge master-tab-badge--soft">
-                  {topics.length}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className={`master-tab ${activeTab === 'radar' ? 'active' : ''}`}
-              onClick={() => setActiveTab('radar')}
-            >
-              <i className="fas fa-satellite-dish"></i>
-              <span>Fora do radar</span>
-              {rescueAlertCount > 0 ? (
-                <span
-                  className="master-tab-badge master-tab-badge--alert"
-                  title={`${rescueAlertCount} tópico${rescueAlertCount === 1 ? '' : 's'} pedindo intervenção`}
-                >
-                  {rescueAlertCount > 99 ? '99+' : rescueAlertCount}
-                </span>
-              ) : null}
-            </button>
-          </div>
-
-          {activeTab === 'topics' ? (
-            <div id="topics-wrapper">
-              <EventsBanner events={upcomingEvents} />
-              {focus && topics.length > 0 && focus.title !== dismissedTitle ? (
-                <FocusBanner
-                  focus={focus}
-                  onApply={() => {
-                    applyFocusSuggestion();
-                    setDismissedTitle(focus.title);
-                  }}
-                  onDismiss={() => setDismissedTitle(focus.title)}
-                />
-              ) : null}
-              <div className="filters-container">
-                <div className="filters-top-row">
-                  <div className="region-toggle-pill">
-                    <button
-                      id="view-br-topics"
-                      className={`region-pill-btn ${region === 'BR' ? 'active' : ''}`}
-                      onClick={() => setRegion('BR')}
-                    >
-                      Brasil
-                    </button>
-                    <button
-                      id="view-latam-topics"
-                      className={`region-pill-btn ${region === 'LATAM' ? 'active' : ''}`}
-                      onClick={() => setRegion('LATAM')}
-                    >
-                      LATAM
-                    </button>
-                  </div>
-
-                  <div className="search-wrapper">
-                    <i className="fas fa-search"></i>
-                    <input
-                      type="text"
-                      placeholder="Pesquisar por Título..."
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                    />
-                  </div>
-
-                  <div className="actions-wrapper">
-                    <div className="sort-wrapper">
-                      <i className="fas fa-sort-amount-down-alt"></i>
-                      <select
-                        id="sort-order"
-                        value={sort}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          if (value === 'my_focus') {
-                            activateFocus();
-                          } else {
-                            setSort(value);
-                          }
-                        }}
-                      >
-                        <option value="newest">Mais Recentes</option>
-                        <option value="oldest">Mais Antigos</option>
-                        <option value="my_focus">Minha prioridade</option>
-                      </select>
-                    </div>
-
-                    <div className="v-separator"></div>
-
-                    <div className="toggle-compact">
-                      <span className="toggle-label">Meus Tópicos</span>
-                      <label className="switch">
-                        <input
-                          type="checkbox"
-                          id="my-topics-toggle"
-                          checked={onlyMine}
-                          onChange={(event) => setOnlyMine(event.target.checked)}
-                        />
-                        <span className="slider"></span>
-                      </label>
-                    </div>
-                  </div>
+          <div id="topics-wrapper">
+            <EventsBanner events={upcomingEvents} />
+            {focus && topics.length > 0 && focus.title !== dismissedTitle ? (
+              <FocusBanner
+                focus={focus}
+                onApply={() => {
+                  applyFocusSuggestion();
+                  setDismissedTitle(focus.title);
+                }}
+                onDismiss={() => setDismissedTitle(focus.title)}
+              />
+            ) : null}
+            <div className="filters-container">
+              <div className="filters-top-row">
+                <div className="region-toggle-pill">
+                  <button
+                    id="view-br-topics"
+                    className={`region-pill-btn ${region === 'BR' ? 'active' : ''}`}
+                    onClick={() => setRegion('BR')}
+                  >
+                    Brasil
+                  </button>
+                  <button
+                    id="view-latam-topics"
+                    className={`region-pill-btn ${region === 'LATAM' ? 'active' : ''}`}
+                    onClick={() => setRegion('LATAM')}
+                  >
+                    LATAM
+                  </button>
                 </div>
 
-                <div className="filters-bottom-row">
-                  <div className="priority-group">
-                    {PRIORITY_FILTERS.map((filter) => (
-                      <button
-                        key={filter.value}
-                        className={`filter-chip priority ${filter.cssClass} ${priorityFilter === filter.value ? 'active' : ''}`.trim()}
-                        onClick={() => setPriorityFilter(filter.value)}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
+                <div className="search-wrapper">
+                  <i className="fas fa-search"></i>
+                  <input
+                    type="text"
+                    placeholder="Pesquisar por Título..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </div>
+
+                <div className="actions-wrapper">
+                  <div className="sort-wrapper">
+                    <i className="fas fa-sort-amount-down-alt"></i>
+                    <select
+                      id="sort-order"
+                      value={sort}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (value === 'my_focus') {
+                          activateFocus();
+                        } else {
+                          setSort(value);
+                        }
+                      }}
+                    >
+                      <option value="newest">Mais Recentes</option>
+                      <option value="oldest">Mais Antigos</option>
+                      <option value="my_focus">Minha prioridade</option>
+                    </select>
                   </div>
 
-                  <div className="v-separator mobile-hide"></div>
+                  <div className="v-separator"></div>
 
-                  <div
-                    className="category-scroll-area"
-                    id="category-filters-box"
-                    onWheel={(e) => {
-                      if (e.deltaY === 0) return;
-                      e.currentTarget.scrollLeft += e.deltaY;
-                      e.preventDefault();
-                    }}
-                  >
-                    {CATEGORY_BUTTONS.map((button) => {
-                      const isAll = button.category === 'Todas';
-                      const isActive = isAll
-                        ? selectedCategories.length === 0
-                        : selectedCategories.includes(button.category);
-                      return (
-                        <button
-                          key={button.category}
-                          className={`filter-chip category ${button.cssClass} ${isActive ? 'active' : ''}`.trim()}
-                          data-category={button.category}
-                          onClick={() => toggleCategory(button.category)}
-                        >
-                          {isAll ? (
-                            <i className="fas fa-border-all category-icon-fallback"></i>
-                          ) : (
-                            <svg className="category-img" role="img" aria-label={button.label}>
-                              <use xlinkHref={`/assets/categorias/alura-categorias.svg#icon-categorias-${button.file}`} />
-                            </svg>
-                          )}
-                          <span className="category-label">{button.label}</span>
-                          {!isAll ? (
-                            (() => {
-                              const count = categoryCounts[button.category] || 0;
-                              const isAlert = count > 0 && count >= alertLimit;
-                              return (
-                                <span className={`count-badge${isAlert ? ' alert-mode' : ''}`}>
-                                  {count}
-                                </span>
-                              );
-                            })()
-                          ) : null}
-                        </button>
-                      );
-                    })}
+                  <div className="toggle-compact">
+                    <span className="toggle-label">Meus Tópicos</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        id="my-topics-toggle"
+                        checked={onlyMine}
+                        onChange={(event) => setOnlyMine(event.target.checked)}
+                      />
+                      <span className="slider"></span>
+                    </label>
                   </div>
                 </div>
               </div>
 
-              {error ? (
-                <div className="error-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: 'var(--light-text-color)' }}>
-                  {error}
+              <div className="status-filter-row" role="group" aria-label="Filtrar por status">
+                {STATUS_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    className={`status-chip ${filter.cssClass} ${statusFilter === filter.value ? 'active' : ''}`.trim()}
+                    onClick={() => setStatusFilter(filter.value)}
+                    title={STATUS_INFO[filter.value]?.hint || 'Todos os tópicos'}
+                  >
+                    {STATUS_INFO[filter.value] ? (
+                      <i className={`fas ${STATUS_INFO[filter.value].icon}`} aria-hidden="true"></i>
+                    ) : null}
+                    <span>{filter.label}</span>
+                    <span className="status-chip-count">{statusCounts[filter.value] || 0}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="filters-bottom-row">
+                <div className="priority-group">
+                  {PRIORITY_FILTERS.map((filter) => (
+                    <button
+                      key={filter.value}
+                      className={`filter-chip priority ${filter.cssClass} ${priorityFilter === filter.value ? 'active' : ''}`.trim()}
+                      onClick={() => setPriorityFilter(filter.value)}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
                 </div>
-              ) : null}
-              <div id="topics-container">
-                {loading
-                  ? Array.from({ length: 6 }).map((_, index) => (
-                      <div key={index} className="skeleton-card">
-                        <div className="skeleton-header">
-                          <div className="skeleton-tag category shimmer"></div>
-                          <div className="skeleton-tag priority shimmer"></div>
-                        </div>
-                        <div className="skeleton-body">
-                          <div className="skeleton-line title-1 shimmer"></div>
-                          <div className="skeleton-line title-2 shimmer"></div>
-                        </div>
-                        <div className="skeleton-footer">
-                          <div className="skeleton-avatar shimmer"></div>
-                        </div>
-                      </div>
-                    ))
-                  : topicCards.length > 0
-                  ? topicCards
-                  : (
-                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: 'var(--light-text-color)' }}>
-                      Nenhum tópico encontrado.
-                    </div>
-                  )}
+
+                <div className="v-separator mobile-hide"></div>
+
+                <div
+                  className="category-scroll-area"
+                  id="category-filters-box"
+                  onWheel={(e) => {
+                    if (e.deltaY === 0) return;
+                    e.currentTarget.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                  }}
+                >
+                  {CATEGORY_BUTTONS.map((button) => {
+                    const isAll = button.category === 'Todas';
+                    const isActive = isAll
+                      ? selectedCategories.length === 0
+                      : selectedCategories.includes(button.category);
+                    return (
+                      <button
+                        key={button.category}
+                        className={`filter-chip category ${button.cssClass} ${isActive ? 'active' : ''}`.trim()}
+                        data-category={button.category}
+                        onClick={() => toggleCategory(button.category)}
+                      >
+                        {isAll ? (
+                          <i className="fas fa-border-all category-icon-fallback"></i>
+                        ) : (
+                          <svg className="category-img" role="img" aria-label={button.label}>
+                            <use xlinkHref={`/assets/categorias/alura-categorias.svg#icon-categorias-${button.file}`} />
+                          </svg>
+                        )}
+                        <span className="category-label">{button.label}</span>
+                        {!isAll ? (
+                          (() => {
+                            const count = categoryCounts[button.category] || 0;
+                            const isAlert = count > 0 && count >= alertLimit;
+                            return (
+                              <span className={`count-badge${isAlert ? ' alert-mode' : ''}`}>
+                                {count}
+                              </span>
+                            );
+                          })()
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          ) : (
-            <RescuePanel username={username} />
-          )}
+
+            {error ? (
+              <div className="error-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: 'var(--light-text-color)' }}>
+                {error}
+              </div>
+            ) : null}
+            <div id="topics-container">
+              {loading
+                ? Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="skeleton-card">
+                      <div className="skeleton-header">
+                        <div className="skeleton-tag category shimmer"></div>
+                        <div className="skeleton-tag priority shimmer"></div>
+                      </div>
+                      <div className="skeleton-body">
+                        <div className="skeleton-line title-1 shimmer"></div>
+                        <div className="skeleton-line title-2 shimmer"></div>
+                      </div>
+                      <div className="skeleton-footer">
+                        <div className="skeleton-avatar shimmer"></div>
+                      </div>
+                    </div>
+                  ))
+                : topicCards.length > 0
+                ? topicCards
+                : (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: 'var(--light-text-color)' }}>
+                    Nenhum tópico encontrado.
+                  </div>
+                )}
+            </div>
+          </div>
         </div>
       </main>
     </div>

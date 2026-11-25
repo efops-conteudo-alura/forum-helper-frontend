@@ -12,7 +12,7 @@ React 19, Vite 8, React Router 7, axios, Chart.js, Firebase (só Firestore), mar
 src/App.jsx                 rotas e configurações do usuário (localStorage)
 src/api/apiService.js       todas as chamadas: backend, planilha Google, ClickUp
 src/features/
-  topics/                   lista de tópicos BR/LATAM, claim, fila de resgate (IA), foco
+  topics/                   lista de tópicos BR/LATAM, claim, foco
   dashboard/                gráficos de produtividade (helpers.js tem o roster do time)
   mural/                    mural de avisos no Firestore (coleção mural_cards)
   catalog/                  busca no catálogo da Alura, com Gemini opcional
@@ -54,7 +54,8 @@ Tudo que começa com `VITE_` vai embutido no JavaScript entregue ao navegador. N
 
 ## Integrações
 
-- **Backend Forum Helper (API Java, SSO Microsoft):** tópicos, claims, estatísticas, fila de resgate e atividades. Desde o PR 1 (merge em 15/10/2026) o app usa o cookie de sessão `FORUM_SESSION` pelo proxy do mesmo domínio; o `AuthGate` só monta o app depois de `GET /forum-api/auth/me` responder 200, e o interceptor do `apiService.js` manda ao login em qualquer 401.
+- **Backend Forum Helper (API Java, SSO Microsoft):** tópicos, claims, estatísticas e atividades. A fila de resgate ("Fora do radar") foi retirada em 24/11/2026. Desde o PR 1 (merge em 15/10/2026) o app usa o cookie de sessão `FORUM_SESSION` pelo proxy do mesmo domínio; o `AuthGate` só monta o app depois de `GET /forum-api/auth/me` responder 200, e o interceptor do `apiService.js` manda ao login em qualquer 401.
+- **Status do tópico (desde 25/11/2026):** `GET /api/topics` traz `status` em cada tópico. `SEM_RESPOSTA` vem da lista "sem resposta" do fórum (ninguém respondeu); `SEM_RESPOSTA_OFICIAL` vem de uma consulta do BI no backend (alunos responderam, ninguém da Alura) e traz `replyCount` e `bb`. O card mostra o status como tag principal, e o filtro de status tem a contagem de cada tipo. Os "sem resposta oficial" ficam fora de toda contagem de SLA: use `entraNoSla` (`features/topics/helpers.js`) em qualquer lugar novo que conte SLA ou idade crítica.
 - **Firestore (projeto forum-helper-mural):** coleção `mural_cards`.
 - **Planilha Google:** foco diário, avisos e alocação, lida pelo endpoint público `gviz` (o ID está em `apiService.js`, `Sidebar.jsx` e `StatusPanel.jsx`).
 - **ClickUp:** cada pessoa cola o próprio token pessoal nas Configurações. O navegador chama a API do ClickUp direto.

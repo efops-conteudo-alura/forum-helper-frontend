@@ -129,8 +129,8 @@ export async function fetchLatamStats(username) {
 
 export async function claimTopic(topicLink, username, avatarUrl = null) {
     try {
-        // Mesmo padrão do /rescue-claim: front manda o avatar pronto (que ele
-        // já tem cacheado no localStorage). Backend valida e usa, evitando
+        // O front manda o avatar pronto (que ele já tem cacheado no
+        // localStorage). Backend valida e usa, evitando
         // scrappear na hora — claim fica instantâneo.
         const response = await api.post('/claim', {
             topicLink,
@@ -321,46 +321,6 @@ export async function fetchUserAnnualData(username) {
         console.error("Erro histórico anual:", error);
         return [];
     }
-}
-
-export async function fetchRescueQueue() {
-    try {
-        const response = await api.get('/rescue-queue');
-        return response.data;
-    } catch (error) {
-        console.error('Erro no fetchRescueQueue:', error);
-        return { topics: [], waiting_queue: [] };
-    }
-}
-
-export async function claimRescueTopic(topicId, username, avatarUrl) {
-    const response = await api.post('/rescue-claim', {
-        topic_id: topicId,
-        username: username,
-        avatar: avatarUrl
-    });
-    return response.data;
-}
-
-export async function unclaimRescueTopic(topicId) {
-    const response = await api.post('/rescue-unclaim', {
-        topic_id: topicId
-    });
-    return response.data;
-}
-
-/*
-  Marca um tópico do Fora do Radar como resolvido. Backend faz soft-delete
-  (status=RESOLVED, deixa de aparecer em /api/rescue-queue). Quem chama é
-  responsável por sumir o card otimisticamente — próximo poll já não
-  retorna ele.
-*/
-export async function resolveRescueTopic(topicId, username) {
-    const response = await api.post('/rescue-resolve', {
-        topic_id: topicId,
-        username,
-    });
-    return response.data;
 }
 
 export async function fetchFocusData() {

@@ -5,7 +5,6 @@ import {
   fetchUserStats,
   fetchLatamStats,
   fetchFocusData,
-  fetchRescueQueue,
   fetchClickUpUser,
 } from '../../api/apiService';
 import { db } from '../../features/mural/firebase';
@@ -78,7 +77,6 @@ function StatusPanel({ username }) {
 
     tasks.push({ id: 'focus', label: 'Foco diário', fn: () => fetchFocusData() });
     tasks.push({ id: 'mural', label: 'Mural · Firebase', fn: checkMuralFirebase });
-    tasks.push({ id: 'rescue', label: 'Fora do Radar · API', fn: () => fetchRescueQueue() });
 
     // Só roda o check do ClickUp se o token tá configurado, pra não mostrar
     // vermelho permanente pra quem não usa a integração.

@@ -1,3 +1,5 @@
+import { entraNoSla } from './helpers';
+
 // Motor de sugestão de foco — função pura, sem React.
 //
 // A ideia: o Forum Helper deixa de ser um filtro burro por área e passa a
@@ -31,10 +33,12 @@ function summarize(topics, category) {
   const items = typeof category === 'undefined'
     ? topics
     : topics.filter((t) => t.category === category);
-  const sla = items.filter(
+  // "Sem resposta oficial" não conta SLA (ver entraNoSla em helpers.js).
+  const comSla = items.filter(entraNoSla);
+  const sla = comSla.filter(
     (t) => t.ageInDays >= SLA_DAYS && t.ageInDays < URGENT_DAYS,
   ).length;
-  const urgent = items.filter((t) => t.ageInDays >= URGENT_DAYS).length;
+  const urgent = comSla.filter((t) => t.ageInDays >= URGENT_DAYS).length;
   const unclaimed = items.filter((t) => !t.isClaimed).length;
   // warning fica como 0 — campo mantido pra compat com buildStatsForCategory
   // que ainda lê `warning` e mostra um chip se houver. Hoje sempre 0.

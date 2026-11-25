@@ -202,6 +202,66 @@ input:checked+.slider:before {
 }
 
 /* ==========================================================================
+   STATUS DO TÓPICO (Sem resposta / Sem resposta oficial), com contagem
+   ========================================================================== */
+.status-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 8px 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg-color);
+    color: var(--light-text-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text-color);
+    transform: translateY(-1px);
+}
+
+.status-chip-count {
+    min-width: 26px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.status-chip.sem-resposta i { color: var(--cor-sem-resposta); }
+.status-chip.sem-resposta-oficial i { color: var(--cor-sem-resposta-oficial); }
+
+.status-chip.active {
+    background: #4b5563;
+    border-color: transparent;
+    color: #fff;
+}
+
+.status-chip.sem-resposta.active { background: var(--cor-sem-resposta); }
+.status-chip.sem-resposta-oficial.active { background: var(--cor-sem-resposta-oficial); }
+.status-chip.active i { color: #fff; }
+
+.status-chip.active .status-chip-count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+/* ==========================================================================
    ANDAR 2: SEGMENTAÇÃO (CHIPS)
    ========================================================================== */
 .filters-bottom-row {
