@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAvatarFromBackend } from '../../api/apiService';
 import { TEAM, getDisplayName } from '../../features/allocation/team';
+import { avatarEstatico, ehAvatarPadrao } from './avatarEstatico';
 
 /*
   Store CENTRAL de avatares.
@@ -58,7 +59,8 @@ function readSticky(username) {
 
 function writeSticky(username, url) {
   const k = normalizeKey(username);
-  if (!k || !url) return;
+  // Imagem genérica não é foto: gravar isso apagaria uma foto boa que já estivesse guardada.
+  if (!k || !url || ehAvatarPadrao(url)) return;
   try {
     localStorage.setItem(
       STICKY_PREFIX + k,
@@ -82,7 +84,7 @@ async function fetchOne(username) {
   cache.set(username, { ...entry, status: 'loading', attempts });
   try {
     const av = await fetchAvatarFromBackend(username);
-    if (av?.success && av.url) {
+    if (av?.success && av.url && !ehAvatarPadrao(av.url)) {
       cache.set(username, {
         url: av.url,
         status: 'ok',
@@ -120,7 +122,8 @@ function init() {
   if (initialized) return;
   initialized = true;
   for (const member of TEAM) {
-    const sticky = readSticky(member.username);
+    // 1º a foto fixa do time (vale em qualquer navegador/domínio); 2º o cache do navegador; 3º a API.
+    const sticky = avatarEstatico(member.username) || readSticky(member.username);
     if (sticky) {
       cache.set(member.username, {
         url: sticky,
@@ -148,8 +151,8 @@ export function getAvatar(username) {
   const entry = cache.get(username);
   if (entry?.url) return entry.url;
   // Username fora do TEAM (autor de tópico aleatório, etc.) — popula
-  // sob demanda. Sticky check primeiro pra evitar fetch.
-  const sticky = readSticky(username);
+  // sob demanda. Foto fixa e sticky primeiro pra evitar fetch.
+  const sticky = avatarEstatico(username) || readSticky(username);
   if (sticky) {
     cache.set(username, { url: sticky, status: 'ok', attempts: 0, fetchedAt: Date.now() });
     return sticky;
@@ -163,7 +166,7 @@ export function preloadUser(username) {
   init();
   if (!username) return;
   if (!cache.has(username)) {
-    const sticky = readSticky(username);
+    const sticky = avatarEstatico(username) || readSticky(username);
     if (sticky) {
       cache.set(username, { url: sticky, status: 'ok', attempts: 0, fetchedAt: Date.now() });
       notify();
