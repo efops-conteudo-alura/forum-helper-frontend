@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { guardarRotaAtual } from '../shared/auth/sessaoLocal';
+import { avatarEstatico, ehAvatarPadrao } from '../shared/avatars/avatarEstatico';
 
 /*
   Login único (SSO Microsoft).
@@ -197,6 +198,11 @@ export async function fetchAvatarFromBackend(username) {
     if (!username) return { success: false, url: null };
 
     const normalizedUsername = username.trim().toLowerCase();
+
+    // Foto fixa do time: não depende da API (a Alura deixou de expor a foto no HTML do perfil).
+    const fixo = avatarEstatico(normalizedUsername);
+    if (fixo) return { success: true, url: fixo, cached: true };
+
     const cacheKey = `alura_avatar_v1_${normalizedUsername}`;
     const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
     // "Negative cache": quando o backend FALHA explicitamente (success: false
@@ -243,6 +249,12 @@ export async function fetchAvatarFromBackend(username) {
         // success: true mas avatarUrl null/vazio → ausência neutra. Não cacheia
         // negative pra próxima request poder pegar quando o backend popular.
         if (!data.avatarUrl) {
+            return { success: false, url: null };
+        }
+
+        // A API devolve a imagem genérica quando não acha a foto. Não é foto: não guarda no cache
+        // (para não esconder uma foto real que apareça depois) e deixa o app usar as iniciais.
+        if (ehAvatarPadrao(data.avatarUrl)) {
             return { success: false, url: null };
         }
 

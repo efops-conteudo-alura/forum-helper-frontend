@@ -20,6 +20,7 @@ src/features/
   pdi/                      PDI pessoal, salvo só no localStorage
   events/, status/, notifications-preview/
 src/shared/                 Header, Sidebar, SettingsModal, notificações, avatares
+src/shared/avatars/avataresDoTime.json  fotos do time (a Alura não expõe mais a foto no HTML do perfil; editar aqui)
 src/shared/auth/            AuthGate (portão do SSO) e sessaoLocal (rota pretendida, marca de saída)
 public/data/catalogo.json   dump do catálogo (cerca de 12 mil itens, 5 MB)
 BACKEND_BI_INTEGRATION.md   contrato do endpoint /api/bi-topics
